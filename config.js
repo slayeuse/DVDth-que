@@ -7,9 +7,9 @@ window.DVDT_CONFIG = {
   // (console Firebase → ⚙ Paramètres du projet → Vos applications → </> Web → firebaseConfig).
   // Laisse vide pour rester en mode « navigateur seulement ».
   firebase: {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    appId: ""
+    apiKey: "AIzaSyDvX4c1vCR8jFrMRJUVeGfuAvTNWqWU0PA",
+    authDomain: "dvdtheque-cf604.firebaseapp.com",
+    projectId: "dvdtheque-cf604",
+    appId: "1:735853566768:web:faf241b79b4967b43746f5"
   }
 };
