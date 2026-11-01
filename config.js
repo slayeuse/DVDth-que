@@ -2,7 +2,6 @@
 window.DVDT_CONFIG = {
   // Clé TMDB utilisée si le site n'a pas de serveur (test en local, hébergeur sans fonctions).
   // Une fois la variable TMDB_KEY ajoutée sur Vercel, tu peux vider cette ligne ("") pour ne pas l'afficher publiquement.
-  tmdbKey: "9bf6e7ccf9c8045f34da6e37311138a9",
 
   // Sauvegarde cloud : colle ici la config de ton projet Firebase
   // (console Firebase → ⚙ Paramètres du projet → Vos applications → </> Web → firebaseConfig).
