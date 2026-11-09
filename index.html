@@ -272,12 +272,11 @@ td.seencell:hover{background:#e6ffb8!important}
   </svg>
   <div>
     <div class="logo"><b>DVDthèque</b> <i>2.0</i></div>
-    <div class="tagline">Ta vidéothèque perso · fiches TMDB · Google Sheets</div>
+    <div class="tagline">Ta vidéothèque perso · fiches TMDB · Google Sheet</div>
   </div>
   <div class="burst">BETA<br>!</div>
   <div class="sp"></div>
   <div class="cloudst" id="cloudSt" title="Google Sheets"><span class="dot"></span><span id="cloudTxt">Hors-ligne</span></div>
-  <button class="btn small" id="bLogin" style="display:none">🔑 Connexion Google</button>
   <button class="btn grey small" id="bSettings" title="Réglages">⚙ Réglages</button>
 </div>
 
@@ -299,7 +298,7 @@ td.seencell:hover{background:#e6ffb8!important}
   </select>
   <div class="seg" role="group" aria-label="Affichage"><button id="vShelf" class="on">▦ Étagère</button><button id="vList">☰ Liste</button></div>
 </div>
-<div class="syncbar" id="syncbar" style="margin-top:10px"><span id="syncbarTxt"></span><span class="sp" style="flex:1"></span><button class="btn small" id="bResync">🔑 Se reconnecter à Google</button></div>
+<div class="syncbar" id="syncbar" style="margin-top:10px"><span id="syncbarTxt"></span><span class="sp" style="flex:1"></span><button class="btn small" id="bResync">🔄 Réessayer</button></div>
 
 <div class="wrap">
   <aside class="side">
@@ -312,7 +311,7 @@ td.seencell:hover{background:#e6ffb8!important}
     <div class="box"><h3>💡 Astuces</h3><div class="in hint">
       <p style="margin-top:0"><b>Ajouter :</b> tape le titre, clique sur l'affiche : c'est rangé. Enchaîne toute ta pile !</p>
       <p><b>Vu / pas vu :</b> clique sur l'œil 👁 d'un boîtier.</p>
-      <p style="margin-bottom:0"><b>Google Sheets :</b> ta collection est un vrai tableur, modifiable aussi depuis Sheets (recharge la page ensuite).</p>
+      <p style="margin-bottom:0"><b>Google Sheet :</b> ta collection est un vrai tableur, modifiable aussi depuis Sheets (recharge la page ensuite).</p>
     </div></div>
   </aside>
 
@@ -384,7 +383,7 @@ td.seencell:hover{background:#e6ffb8!important}
   <div class="bar">💾 Exporter / restaurer<span class="sp"></span><button class="x" data-close>×</button></div>
   <div class="body">
     <fieldset class="fieldset"><legend>Tableur</legend>
-      <p style="margin-top:0">Liste CSV (Excel / LibreOffice). Avec Google connecté, ta collection est déjà dans Google Sheets.</p>
+      <p style="margin-top:0">Liste CSV (Excel / LibreOffice). Ta collection est aussi dans ton Google Sheet.</p>
       <button class="btn green" id="bCsv">⬇ Télécharger le CSV</button></fieldset>
     <fieldset class="fieldset"><legend>Sauvegarde .json</legend>
       <p style="margin-top:0">Copie complète de secours, que tu peux réimporter ici.</p>
@@ -399,9 +398,9 @@ td.seencell:hover{background:#e6ffb8!important}
 <div class="veil" id="vSettings"><div class="win">
   <div class="bar">⚙ Réglages<span class="sp"></span><button class="x" data-close>×</button></div>
   <div class="body">
-    <fieldset class="fieldset"><legend>📊 Google Sheets</legend>
+    <fieldset class="fieldset"><legend>📊 Google Sheet</legend>
       <div id="gInfo" class="hint">…</div>
-      <div class="row" style="margin-top:6px"><button class="btn small" id="bLogin2">🔑 Se connecter avec Google</button><button class="btn grey small" id="bLogout" style="display:none">Se déconnecter</button>
+      <div class="row" style="margin-top:6px"><button class="btn small" id="bSyncNow">🔄 Synchroniser maintenant</button>
         <a class="btn grey small" id="lnkSheet2" href="#" target="_blank" rel="noopener" style="display:none">📊 Ouvrir le tableur</a></div>
     </fieldset>
     <fieldset class="fieldset"><legend>🎬 Clé API TMDB</legend>
@@ -546,10 +545,10 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")$$(".veil.on").forEa
 
 /* ================= TMDB ================= */
 const TMDB="https://api.themoviedb.org/3", IMG="https://image.tmdb.org/t/p/";
-let proxyOK=null, proxyTmdb=false;
+let proxyOK=null, proxyTmdb=false, proxySheet=false;
 async function hasProxy(){
   if(proxyOK!==null)return proxyOK;
-  try{const r=await fetch("api/ping",{cache:"no-store"});const j=r.ok?await r.json():null;proxyOK=!!(j&&j.ok);proxyTmdb=!!(j&&j.tmdb)}catch{proxyOK=false}
+  try{const r=await fetch("api/ping",{cache:"no-store"});const j=r.ok?await r.json():null;proxyOK=!!(j&&j.ok);proxyTmdb=!!(j&&j.tmdb);proxySheet=!!(j&&j.sheet)}catch{proxyOK=false}
   return proxyOK;
 }
 const tmdbKey=()=>(S.get("tmdbKey","")||CFG.tmdbKey||"").trim();
@@ -687,146 +686,85 @@ async function toggleSeen(id){
   await saveItem(id,nd);render();balloon(nd.seen?"👁 Marqué comme vu":"Marqué comme pas vu",nd.title);
 }
 
-/* ================= Google Sheets ================= */
+/* ================= Google Sheet (via script Apps Script, sans connexion) ================= */
 const COLS=["id","titre","titre_original","annee","realisateur","acteurs","genres","duree_min","format","edition","vu","vu_le","note","prete_a","rangement","notes","synopsis","affiche","tmdb_id","code_barres","ajoute_le","modifie_le"];
 const MAP={id:"id",titre:"title",titre_original:"originalTitle",annee:"year",realisateur:"director",acteurs:"actors",genres:"genre",duree_min:"duration",format:"format",edition:"edition",vu:"seen",vu_le:"seenAt",note:"rating",prete_a:"lentTo",rangement:"location",notes:"notes",synopsis:"synopsis",affiche:"cover",tmdb_id:"tmdbId",code_barres:"ean",ajoute_le:"addedAt",modifie_le:"updatedAt"};
-const LASTCOL=String.fromCharCode(64+COLS.length); // V
-const TAB="DVD";
 const toRow=(id,d)=>COLS.map(c=>{const k=MAP[c];if(c==="id")return id;const v=d[k];
   if(c==="vu")return !!v; if(["annee","duree_min","note"].includes(c))return v===""||v==null?"":(isNaN(+v)?String(v):+v); return v==null?"":String(v)});
-function fromRow(r){const o={};COLS.forEach((c,i)=>{let v=r[i];if(v===undefined||v===null)v="";const k=MAP[c];
+function fromRow(r,cols=COLS){const o={};cols.forEach((c,i)=>{const k=MAP[c];if(!k)return;let v=r[i];if(v===undefined||v===null)v="";
   if(c==="vu")o[k]=v===true||String(v).toUpperCase()==="TRUE"||String(v).toLowerCase()==="oui";else o[k]=String(v)});return o}
 
-const G={
-  token:null,exp:0,client:null,sheetId:S.get("sheetId",null),gid:S.get("sheetGid",null),email:S.get("gEmail",""),
-  pending:S.get("pending",{}),busy:false,want:S.get("gWant",false),
-  enabled(){return !!CFG.googleClientId},
-  ok(){return this.token&&Date.now()<this.exp-60000},
-  loadGis(){return new Promise((res,rej)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return res();
-    const s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.async=true;s.onload=()=>res();s.onerror=()=>rej(new Error("Google ne répond pas"));document.head.appendChild(s)})},
-  async init(){
-    if(!this.enabled()){this.status("off");return}
-    try{await this.loadGis()}catch(e){this.status("err",e.message);return}
-    this.client=google.accounts.oauth2.initTokenClient({client_id:CFG.googleClientId,
-      scope:"https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email",
-      callback:r=>this.onToken(r),error_callback:e=>{this.status(this.want?"expired":"out");if(e&&e.type!=="popup_closed")balloon("Connexion Google",e.message||e.type||"refusée")}});
-    this.status(this.want?"expired":"out");
+const Sheet={
+  pending:S.get("pending",{}),busy:false,again:false,timer:null,mode:"off",url:S.get("sheetLink",""),lastErr:"",
+  async detect(){
+    if(await hasProxy()&&proxySheet)this.mode="proxy";
+    else if(CFG.sheetUrl&&CFG.sheetSecret)this.mode="direct";
+    else this.mode="off";
+    return this.mode;
   },
-  login(){if(!this.client){balloon("Google non configuré","Ajoute googleClientId dans config.js (voir README).");return}
-    this.client.requestAccessToken({prompt:this.want?"":"select_account",login_hint:this.email||undefined})},
-  logout(){if(this.token&&window.google)google.accounts.oauth2.revoke(this.token,()=>{});this.token=null;this.want=false;S.set("gWant",false);this.status("out")},
-  async onToken(r){
-    if(r.error){this.status("err",r.error);return}
-    this.token=r.access_token;this.exp=Date.now()+(+r.expires_in||3600)*1000;this.want=true;S.set("gWant",true);
-    try{const u=await this.api("https://www.googleapis.com/oauth2/v3/userinfo");if(u.email){this.email=u.email;S.set("gEmail",u.email)}}catch{}
-    await this.sync(true);
+  async get(){
+    let r;
+    if(this.mode==="proxy")r=await fetch("api/sheet",{cache:"no-store"});
+    else r=await fetch(CFG.sheetUrl+(CFG.sheetUrl.includes("?")?"&":"?")+"secret="+encodeURIComponent(CFG.sheetSecret),{cache:"no-store"});
+    const j=await r.json().catch(()=>({ok:false,error:"réponse illisible"}));
+    if(!j.ok)throw new Error(j.error||"HTTP "+r.status);return j;
   },
-  async api(url,opt={}){
-    if(!this.ok())throw Object.assign(new Error("token"),{code:"token"});
-    const r=await fetch(url,{...opt,headers:{Authorization:"Bearer "+this.token,"Content-Type":"application/json",...(opt.headers||{})}});
-    if(r.status===401){this.token=null;this.status("expired");throw Object.assign(new Error("token"),{code:"token"})}
-    if(r.status===404)throw Object.assign(new Error("introuvable"),{code:404});
-    if(!r.ok){let m="HTTP "+r.status;try{m=(await r.json()).error.message||m}catch{}throw new Error(m)}
-    return r.status===204?null:r.json();
+  async post(ops){
+    let r;
+    if(this.mode==="proxy")r=await fetch("api/sheet",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ops})});
+    else r=await fetch(CFG.sheetUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({secret:CFG.sheetSecret,ops})});
+    const j=await r.json().catch(()=>({ok:false,error:"réponse illisible"}));
+    if(!j.ok)throw new Error(j.error||"HTTP "+r.status);return j;
   },
-  sheetsUrl(p){return "https://sheets.googleapis.com/v4/spreadsheets/"+this.sheetId+p},
-  async ensureSheet(){
-    if(this.sheetId){try{const m=await this.api(this.sheetsUrl("?fields=sheets.properties"));const s=(m.sheets||[]).find(x=>x.properties.title===TAB);if(s){this.gid=s.properties.sheetId;S.set("sheetGid",this.gid);return}}catch(e){if(e.code!==404)throw e}}
-    // chercher un tableur « DVDthèque » déjà créé par l'appli (autre appareil)
-    const q=encodeURIComponent("name='DVDthèque' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
-    const f=await this.api(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`);
-    if(f.files&&f.files.length){this.sheetId=f.files[0].id;S.set("sheetId",this.sheetId);
-      const m=await this.api(this.sheetsUrl("?fields=sheets.properties"));const s=(m.sheets||[]).find(x=>x.properties.title===TAB)||m.sheets[0];this.gid=s.properties.sheetId;S.set("sheetGid",this.gid);return}
-    // sinon : le créer
-    const c=await this.api("https://sheets.googleapis.com/v4/spreadsheets",{method:"POST",body:JSON.stringify({
-      properties:{title:"DVDthèque",locale:"fr_FR"},sheets:[{properties:{title:TAB,gridProperties:{frozenRowCount:1,columnCount:COLS.length}}}]})});
-    this.sheetId=c.spreadsheetId;this.gid=c.sheets[0].properties.sheetId;S.set("sheetId",this.sheetId);S.set("sheetGid",this.gid);
-    await this.api(this.sheetsUrl(`/values/${TAB}!A1:${LASTCOL}1?valueInputOption=RAW`),{method:"PUT",body:JSON.stringify({values:[COLS]})});
-    const g=this.gid;
-    await this.api(this.sheetsUrl(":batchUpdate"),{method:"POST",body:JSON.stringify({requests:[
-      {repeatCell:{range:{sheetId:g,startRowIndex:0,endRowIndex:1},cell:{userEnteredFormat:{backgroundColor:{red:.12,green:.27,blue:.45},textFormat:{bold:true,foregroundColor:{red:1,green:1,blue:1}}}},fields:"userEnteredFormat(backgroundColor,textFormat)"}},
-      {setDataValidation:{range:{sheetId:g,startRowIndex:1,startColumnIndex:10,endColumnIndex:11},rule:{condition:{type:"BOOLEAN"}}}},
-      {updateDimensionProperties:{range:{sheetId:g,dimension:"COLUMNS",startIndex:0,endIndex:1},properties:{hiddenByUser:true},fields:"hiddenByUser"}},
-      {updateDimensionProperties:{range:{sheetId:g,dimension:"COLUMNS",startIndex:1,endIndex:2},properties:{pixelSize:260},fields:"pixelSize"}},
-      {updateDimensionProperties:{range:{sheetId:g,dimension:"COLUMNS",startIndex:16,endIndex:17},properties:{pixelSize:320},fields:"pixelSize"}}
-    ]})});
-  },
-  async readAll(){
-    const v=await this.api(this.sheetsUrl(`/values/${TAB}!A2:${LASTCOL}?valueRenderOption=UNFORMATTED_VALUE`));
-    const rows=v.values||[];const map=new Map();
-    rows.forEach((r,i)=>{const d=fromRow(r);if(!d.id||!d.title)return;const id=d.id;delete d.id;map.set(id,{row:i+2,d})});
-    return map;
-  },
-  async rowOf(id){const v=await this.api(this.sheetsUrl(`/values/${TAB}!A:A`));const col=v.values||[];for(let i=1;i<col.length;i++)if(col[i]&&col[i][0]===id)return i+1;return 0},
-  async writeOne(id,d){
-    const row=await this.rowOf(id);const values=[toRow(id,d)];
-    if(row)await this.api(this.sheetsUrl(`/values/${TAB}!A${row}:${LASTCOL}${row}?valueInputOption=RAW`),{method:"PUT",body:JSON.stringify({values})});
-    else await this.api(this.sheetsUrl(`/values/${TAB}!A:${LASTCOL}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`),{method:"POST",body:JSON.stringify({values})});
-  },
-  async deleteOne(id){
-    const row=await this.rowOf(id);if(!row)return;
-    await this.api(this.sheetsUrl(":batchUpdate"),{method:"POST",body:JSON.stringify({requests:[{deleteDimension:{range:{sheetId:this.gid,dimension:"ROWS",startIndex:row-1,endIndex:row}}}]})});
-  },
-  queue(id,op){this.pending[id]=op;S.set("pending",this.pending);this.status(this.ok()?"busy":this.want?"expired":"out")},
-  async flush(){
-    for(const [id,op] of Object.entries(this.pending)){
-      if(op==="del")await this.deleteOne(id);else{const d=items.get(id);if(d)await this.writeOne(id,d)}
-      delete this.pending[id];S.set("pending",this.pending);
-    }
-  },
-  async sync(first){
-    if(this.busy||!this.ok())return;this.busy=true;this.status("busy");
+  queue(id,op){this.pending[id]=op;S.set("pending",this.pending);if(this.mode==="off"){this.status();return}
+    clearTimeout(this.timer);this.timer=setTimeout(()=>this.sync(),400);this.status("busy")},
+  async sync(){
+    if(this.mode==="off")return;
+    if(this.busy){this.again=true;return}
+    this.busy=true;this.status("busy");
     try{
-      await this.ensureSheet();
-      if(first&&!S.get("linked:"+this.sheetId,false)){
-        // 1re liaison de cet appareil : envoyer ce qui n'est que local
-        const remote=await this.readAll();
-        for(const [id] of items)if(!remote.has(id)&&!this.pending[id])this.pending[id]="put";
-        S.set("pending",this.pending);S.set("linked:"+this.sheetId,true);
+      if(!S.get("sheetLinked",false)){
+        // première liaison de cet appareil : on envoie ce qui n'existe qu'ici
+        const j=await this.get();const ids=new Set((j.rows||[]).map(r=>String(r[(j.cols||COLS).indexOf("id")])));
+        for(const id of items.keys())if(!ids.has(id)&&!this.pending[id])this.pending[id]="put";
+        S.set("pending",this.pending);S.set("sheetLinked",true);
       }
-      await this.flush();
-      const remote=await this.readAll();
-      const next=new Map([...remote].map(([id,x])=>[id,x.d]));
+      const sent={...this.pending};
+      const ops=Object.entries(sent).map(([id,op])=>op==="del"?{action:"delete",id}:(items.has(id)?{action:"put",id,row:toRow(id,items.get(id))}:null)).filter(Boolean);
+      if(ops.length)await this.post(ops);
+      for(const [id,op] of Object.entries(sent))if(this.pending[id]===op)delete this.pending[id];
+      S.set("pending",this.pending);
+      const j=await this.get();
+      if(j.url){this.url=j.url;S.set("sheetLink",j.url)}
+      const cols=j.cols||COLS,next=new Map();
+      (j.rows||[]).forEach(r=>{const d=fromRow(r,cols);const id=d.id;delete d.id;if(id&&d.title)next.set(id,d)});
       for(const [id,op] of Object.entries(this.pending)){if(op==="put"&&items.has(id))next.set(id,items.get(id));if(op==="del")next.delete(id)}
       items=next;await Local.replaceAll([...items]);render();
-      this.status("on");
-      if(first)balloon("📊 Google Sheets",`${items.size} DVD synchronisé(s).`);
-    }catch(e){if(e.code==="token")this.status("expired");else this.status("err",e.message)}
-    finally{this.busy=false}
+      this.lastErr="";this.status("on");
+    }catch(e){this.lastErr=String(e.message||e);this.status("err")}
+    finally{this.busy=false;if(this.again){this.again=false;this.sync()}}
   },
-  async push(id,op){
-    if(!this.enabled())return;
-    this.queue(id,op);
-    if(!this.ok()||this.busy)return;
-    try{this.status("busy");await this.ensureSheet();await this.flush();this.status("on")}
-    catch(e){if(e.code==="token")this.status("expired");else this.status("err",e.message)}
-  },
-  link(){return this.sheetId?"https://docs.google.com/spreadsheets/d/"+this.sheetId+"/edit":""},
-  status(st,msg){
+  status(st){
+    if(!st)st=this.mode==="off"?"off":this.lastErr?"err":"on";
     const n=Object.keys(this.pending).length;
-    const txt={off:"Mode local",out:"Non connecté",expired:"Google : reconnexion",busy:"Synchronisation…",on:"📊 Google Sheets ✔",err:"Erreur Google"}[st];
+    const txt={off:"Mode local",busy:"Synchronisation…",on:"📊 Google Sheet ✔",err:"⚠ Google Sheet hors ligne"}[st];
     $("#cloudTxt").textContent=txt;
     const dot=$("#cloudSt .dot");dot.classList.toggle("on",st==="on");dot.classList.toggle("busy",st==="busy");
-    $("#bLogin").style.display=st==="out"?"":"none";
-    $("#bLogin2").style.display=(st==="out"||st==="expired"||st==="off")?"":"none";
-    $("#bLogout").style.display=this.want?"":"none";
-    const l=this.link();["#lnkSheet","#lnkSheet2"].forEach(s=>{$(s).style.display=l?"":"none";if(l)$(s).href=l});
+    ["#lnkSheet","#lnkSheet2"].forEach(s=>{$(s).style.display=this.url?"":"none";if(this.url)$(s).href=this.url});
     const bar=$("#syncbar");
-    if(st==="expired"){bar.classList.add("on");$("#syncbarTxt").innerHTML=`🔒 Connexion Google à renouveler (elle dure 1 h).${n?` <b>${n} modification(s)</b> attendent d'être envoyées.`:""} Tes DVD restent enregistrés sur cet appareil.`}
-    else if(st==="err"){bar.classList.add("on");$("#syncbarTxt").innerHTML=`⚠ Google Sheets : ${esc(msg||"erreur")}`}
+    if(st==="err"){bar.classList.add("on");$("#syncbarTxt").innerHTML=`⚠ Problème avec le Google Sheet : ${esc(this.lastErr)}.${n?` <b>${n} modification(s)</b> en attente, gardée(s) sur cet appareil.`:""}`}
     else bar.classList.remove("on");
-    $("#gInfo").innerHTML=st==="off"?"Pas encore configuré : ajoute ton <b>googleClientId</b> dans <b>config.js</b> (étapes dans le README). En attendant, tout est gardé sur cet appareil."
-      :st==="on"||st==="busy"?`Connecté${this.email?" avec <b>"+esc(this.email)+"</b>":""}. Ta collection est enregistrée dans le Google Sheet <b>« DVDthèque »</b> de ton Drive.`
-      :st==="err"?`<span class="err">${esc(msg||"")}</span>`
-      :"Connecte-toi avec ton compte Google : l'appli crée (ou retrouve) un tableur « DVDthèque » dans ton Drive et y range ta collection.";
-    $("#stState").textContent=st==="on"?"📊 Enregistré dans Google Sheets":st==="busy"?"⏳ Synchronisation…":st==="off"?"💾 Enregistré sur cet appareil":"💾 Enregistré sur cet appareil"+(n?` · ${n} en attente`:"");
+    $("#gInfo").innerHTML=st==="off"?"Pas encore relié : suis l'étape « Google Sheet » du README (script à coller dans le tableur + 2 variables sur Vercel). En attendant, tout est gardé sur cet appareil."
+      :st==="err"?`<span class="err">${esc(this.lastErr)}</span>`
+      :`✔ Ta collection est enregistrée dans ton Google Sheet${this.mode==="direct"?" (accès direct via config.js)":""}.`;
+    $("#stState").textContent=st==="on"?"📊 Enregistré dans Google Sheet":st==="busy"?"⏳ Synchronisation…":"💾 Enregistré sur cet appareil"+(n?` · ${n} en attente`:"");
   }
 };
-async function saveItem(id,d){d.updatedAt=d.updatedAt||nowIso();items.set(id,d);await Local.put(id,d);G.push(id,"put")}
-async function deleteItem(id){items.delete(id);await Local.del(id);G.push(id,"del")}
-["#bLogin","#bLogin2","#bResync","#cloudSt"].forEach(s=>$(s).addEventListener("click",()=>{if(G.ok())G.sync();else G.login()}));
-$("#bLogout").addEventListener("click",()=>G.logout());
-document.addEventListener("visibilitychange",()=>{if(!document.hidden&&G.ok())G.sync()});
+async function saveItem(id,d){d.updatedAt=d.updatedAt||nowIso();items.set(id,d);await Local.put(id,d);Sheet.queue(id,"put")}
+async function deleteItem(id){items.delete(id);await Local.del(id);Sheet.queue(id,"del")}
+["#bResync","#bSyncNow","#cloudSt"].forEach(s=>$(s)&&$(s).addEventListener("click",()=>Sheet.sync()));
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)Sheet.sync()});
+window.addEventListener("online",()=>Sheet.sync());
 
 /* ================= Divers ================= */
 $("#bRandom").addEventListener("click",()=>{
@@ -864,8 +802,8 @@ $("#bTestTmdb").addEventListener("click",async()=>{
 });
 $("#bWipe").addEventListener("click",async function(){
   if(this.dataset.arm!=="1"){this.dataset.arm="1";this.textContent="Sûr ? Re-clique";setTimeout(()=>{this.dataset.arm="";this.textContent="Vider le cache local"},4000);return}
-  await Local.replaceAll([]);items.clear();G.pending={};S.set("pending",{});if(G.sheetId)S.set("linked:"+G.sheetId,false);render();closeVeil($("#vSettings"));
-  balloon("Cache vidé",G.ok()?"Rechargement depuis Google Sheets…":"");if(G.ok()){S.set("linked:"+G.sheetId,true);G.sync()}
+  await Local.replaceAll([]);items.clear();Sheet.pending={};S.set("pending",{});render();closeVeil($("#vSettings"));
+  balloon("Cache vidé",Sheet.mode!=="off"?"Rechargement depuis le Google Sheet…":"");Sheet.sync()
 });
 $("#content").addEventListener("click",e=>{
   const sb=e.target.closest("[data-seen]");if(sb){e.stopPropagation();toggleSeen(sb.dataset.seen);return}
@@ -883,7 +821,7 @@ $("#count").addEventListener("click",()=>{if(genreFilter){genreFilter=null;rende
   await Local.open();
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch{}
   items=new Map((await Local.all()).filter(([,d])=>d&&d.title));render();
-  G.init();
+  await Sheet.detect();Sheet.status();Sheet.sync();
   if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 })();
 })();

@@ -1,49 +1,64 @@
 # DVDthèque 2.0 (v3)
 
 Site perso pour cataloguer ses DVD : on cherche le titre sur TMDB, on clique sur l'affiche, et c'est rangé.
-Suivi « vu / pas vu », étagère façon années 2000, et la collection est enregistrée dans un **Google Sheet** de ton Drive après connexion avec ton compte Google.
+Suivi « vu / pas vu », étagère façon années 2000, et la collection est enregistrée directement dans **ton Google Sheet**, sans connexion à faire sur le site.
 
 ## Contenu du dossier
 
 | Fichier | Rôle |
 |---|---|
 | `index.html` | Le site |
-| `config.js` | **À compléter** : ton ID client Google (+ clé TMDB de secours, déjà remplie) |
-| `api/tmdb.js`, `api/ping.js` | Fonctions Vercel : relais TMDB (la clé reste cachée sur le serveur) |
+| `config.js` | Clé TMDB de secours (déjà remplie) |
+| `google-apps-script/Code.gs` | Script à coller dans ton Google Sheet (étape 2) |
+| `api/tmdb.js`, `api/sheet.js`, `api/ping.js` | Fonctions Vercel : relais vers TMDB et vers ton Google Sheet (clés cachées sur le serveur) |
 | `manifest.webmanifest`, `sw.js`, `icon*` | Installation sur l'écran d'accueil du téléphone + hors-ligne |
 
 > Mise à jour depuis la v2 : supprime de ton dépôt `api/dvdfr.js`, `api/upc.js` et `firestore.rules` (plus utilisés). Firebase n'est plus nécessaire.
 
 ## 1. Mise en ligne (Vercel)
 
-1. Remplace les fichiers de ton dépôt par ceux de ce dossier → Vercel redéploie tout seul.
+1. Remplace les fichiers de ton dépôt par ceux de ce dossier. Vercel redéploie tout seul. Comment faire, depuis le site GitHub (sans rien installer) :
+   1. **Dézippe** `dvdtheque.zip` sur ton PC : tu obtiens un dossier `dvdtheque-site`.
+   2. Ouvre ton dépôt sur https://github.com (celui relié à Vercel).
+   3. **Supprime les fichiers devenus inutiles** : clique sur le dossier `api`, puis sur `dvdfr.js` → menu **⋯** en haut à droite → **Delete file** → **Commit changes**. Fais pareil pour `api/upc.js` et `firestore.rules`.
+   4. Reviens à la racine du dépôt → bouton **Add file → Upload files**.
+   5. Ouvre le dossier `dvdtheque-site` sur ton PC, **sélectionne tout ce qu'il y a dedans** (Ctrl+A : `index.html`, `config.js`, le dossier `api`, etc.) et **glisse-le** dans la page GitHub. Glisse bien le *contenu* du dossier, pas le dossier lui-même, sinon tout se retrouve dans un sous-dossier.
+   6. En bas, clique **Commit changes**. Les fichiers du même nom sont remplacés.
+   7. Va sur https://vercel.com → ton projet → onglet **Deployments** : un nouveau déploiement apparaît. Attends qu'il passe à **Ready** (environ 1 min).
+
+   *Si ton site n'est pas relié à GitHub* (déployé avec `npx vercel`) : ouvre un terminal **dans** le dossier `dvdtheque-site` et tape `npx vercel --prod`.
 2. Vérifie que la variable d'environnement `TMDB_KEY` existe (Vercel → projet → Settings → Environment Variables). Sinon, la clé de `config.js` sert de secours.
-3. Note l'adresse de ton site (ex. `https://ma-dvdtheque.vercel.app`), elle sert à l'étape 2.
 
-## 2. Connexion Google + Google Sheets (gratuit, ~10 min)
+## 2. Relier ton Google Sheet (sans connexion Google sur le site, ~10 min)
 
-Le site utilise la connexion Google « officielle » et ne demande qu'une seule autorisation : **accéder aux fichiers créés par l'appli** (`drive.file`). Il ne voit donc pas le reste de ton Drive. Au premier login, il crée un tableur **« DVDthèque »** dans ton Drive. Sur un autre appareil, il retrouve ce même tableur.
+Le site parle à **ton** tableur via un petit script Google (« Apps Script ») que tu colles une seule fois dedans. Le script tourne avec ton compte, donc personne n'a besoin de se connecter. L'adresse du script et son mot de passe restent cachés sur Vercel.
 
-Dans la **Google Cloud Console** (https://console.cloud.google.com), avec ton compte Gmail. Les intitulés peuvent varier un peu selon les mises à jour de Google.
+**A. Créer le tableur et le script**
+1. Sur https://sheets.google.com → **Vide** (nouveau tableur) → renomme-le « DVDthèque ».
+2. Menu **Extensions → Apps Script**. Un éditeur s'ouvre avec un fichier `Code.gs`.
+3. Efface tout ce qu'il contient, puis colle le contenu du fichier `google-apps-script/Code.gs` de ce dossier.
+4. Ligne `const SECRET = "change-moi-123";` : remplace `change-moi-123` par un mot de passe à toi (lettres et chiffres, sans espace). Garde-le, il resservira à l'étape C.
+5. Clique sur l'icône **💾 Enregistrer**.
 
-1. **Créer un projet** : en haut, sélecteur de projet → **Nouveau projet** → nom « DVDtheque » → Créer, puis sélectionne-le.
-2. **Activer les API** : menu ☰ → **API et services → Bibliothèque** → cherche **Google Sheets API** → **Activer**. Fais pareil pour **Google Drive API**.
-3. **Écran de consentement** : menu ☰ → **API et services → Écran de consentement OAuth** (ou **Google Auth Platform**) → **Commencer** :
-   - Nom de l'appli : « DVDthèque », adresse e-mail d'assistance : ton Gmail
-   - Audience : **Externe**
-   - Coordonnées : ton Gmail → accepte → **Créer**
-   - Dans **Audience** (ou « Utilisateurs test ») → **Ajouter des utilisateurs** → ton Gmail (et celui des personnes de ta famille qui l'utiliseront).
-4. **Créer l'ID client** : **Clients** (ou **Identifiants → Créer des identifiants → ID client OAuth**) :
-   - Type : **Application Web**
-   - **Origines JavaScript autorisées** → ajoute l'adresse de ton site, ex. `https://ma-dvdtheque.vercel.app` (sans `/` à la fin). Pour tester sur ton PC, ajoute aussi `http://localhost:8000`.
-   - Pas besoin d'« URI de redirection » → **Créer**
-5. Copie l'**ID client** (il finit par `.apps.googleusercontent.com`) dans `config.js`, ligne `googleClientId`, puis redéploie.
-6. Ouvre le site → **🔑 Connexion Google** → choisis ton compte → autorise. Si Google affiche « Google n'a pas validé cette application », clique **Continuer** : c'est normal pour une appli perso en mode test.
+**B. Publier le script**
+1. En haut à droite : **Déployer → Nouveau déploiement**.
+2. À côté de « Sélectionner le type », clique sur la **roue dentée ⚙ → Application Web**.
+3. Règle **Exécuter en tant que : Moi**, puis **Qui a accès : Tout le monde** → **Déployer**.
+4. Google demande d'**autoriser l'accès** : choisis ton compte. S'il affiche « Google n'a pas validé cette application », clique **Paramètres avancés → Accéder à … (non sécurisé)** → **Autoriser**. C'est normal : c'est ton propre script.
+5. Copie l'**URL de l'application Web** (elle finit par `/exec`).
+
+**C. Donner l'adresse et le mot de passe à Vercel**
+1. Vercel → ton projet → **Settings → Environment Variables** → ajoute :
+   - `SHEET_URL` = l'URL copiée (…/exec)
+   - `SHEET_SECRET` = ton mot de passe de l'étape A.4
+2. Onglet **Deployments** → sur le dernier déploiement, **⋯ → Redeploy** (pour que les variables soient prises en compte).
+3. Ouvre le site : en haut à droite, tu dois voir **📊 Google Sheet ✔**. Dès la première ouverture, un onglet « DVD » se crée dans ton tableur.
 
 ### Bon à savoir
-- **La connexion dure 1 h** (règle de Google pour les sites sans serveur). Ensuite un bandeau propose de te reconnecter en un clic. En attendant, tout reste enregistré sur l'appareil et part dans le Sheet à la reconnexion.
-- **Tu peux modifier le tableur directement** dans Google Sheets (cocher « vu », corriger un titre…). Ne touche pas la colonne `id` (masquée), puis recharge le site.
-- Les DVD ajoutés avant la connexion sont envoyés dans le Sheet au premier login.
+- **Tu peux modifier le tableur directement** (cocher « vu », corriger un titre…). Ne touche pas la colonne `id` (masquée). Recharge le site ensuite.
+- **Hors connexion**, tout reste enregistré sur l'appareil et part dans le Sheet dès que le réseau revient (ou avec le bouton « Réessayer »).
+- **Si tu modifies `Code.gs` plus tard** : Déployer → Gérer les déploiements → ✏ Modifier → Version : **Nouvelle version** → Déployer. L'URL reste la même.
+- **Sécurité :** sans connexion, toute personne qui a l'adresse de ton site peut ajouter ou modifier des DVD. Ne la diffuse pas largement. Le mot de passe du script, lui, n'est jamais visible : il reste sur Vercel.
 
 ## Utilisation
 
