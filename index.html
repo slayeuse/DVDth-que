@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#16243a">
-<meta name="description" content="Ma DVDthèque perso : scan des codes-barres, fiches films, étagère.">
+<meta name="description" content="Ma DVDthèque perso : fiches films TMDB, vu / pas vu, étagère, sauvegarde Google Sheets.">
 <title>DVDthèque 2.0</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -225,26 +225,20 @@ table.list .mini .sw{position:absolute;inset:0;display:grid;place-items:center;c
 @keyframes mq{to{transform:translateX(-100%)}}
 @media (max-width:600px){.shelf{grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:20px 12px;padding:14px 12px 24px}.case .tt{margin-top:26px}.gen .t{font-size:12px}.gen .q{font-size:40px}.burst,.tagline,.status .hide-m{display:none}.logo{font-size:24px}}
 
-/* --- site additions --- */
-.scanbox{position:relative;background:#000;border-radius:6px;overflow:hidden;aspect-ratio:4/3;max-height:60vh;margin:0 auto}
-.scanbox video{width:100%;height:100%;object-fit:cover;display:block}
-.scanbox .aim{position:absolute;left:10%;right:10%;top:35%;bottom:35%;border:2px solid rgba(143,209,45,.9);border-radius:6px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
-.scanbox .aim::after{content:"";position:absolute;left:4%;right:4%;top:50%;height:2px;background:#ff3030;box-shadow:0 0 8px #ff3030;animation:laser 1.6s ease-in-out infinite}
-@keyframes laser{50%{top:15%}}
-.scanbox .flash{position:absolute;inset:0;background:#8fd12d;opacity:0;pointer-events:none;transition:opacity .25s}
-.scanbox .flash.on{opacity:.45;transition:none}
-.scanbox .msg{position:absolute;left:8px;right:8px;bottom:8px;background:rgba(0,0,0,.65);color:#fff;border-radius:4px;padding:6px 8px;font-size:12px;text-align:center}
-.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;margin-top:8px}
-.res{cursor:pointer;background:#fff;border:1px solid #c9c6b4;border-radius:4px;padding:4px;text-align:center;font-size:10px;line-height:1.25}
-.res:hover{background:#fffbd8;border-color:#e0a000}
-.res img,.res .noimg{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:2px;background:#24364e;display:block;margin-bottom:3px}
-.res .noimg{display:grid;place-items:center;color:#9cb7d6;font-size:22px}
+/* --- v3 --- */
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px;margin-top:10px}
+.res{position:relative;cursor:pointer;background:#fff;border:1px solid #c9c6b4;border-radius:4px;padding:5px;text-align:center;font-size:10px;line-height:1.25;transition:transform .12s}
+.res:hover{background:#fffbd8;border-color:#e0a000;transform:translateY(-3px)}
+.res img,.res .noimg{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:2px;background:#24364e;display:block;margin-bottom:4px;box-shadow:0 2px 4px rgba(0,0,0,.3)}
+.res .noimg{display:grid;place-items:center;color:#9cb7d6;font-size:26px}
 .res b{display:block;font-size:11px}
+.res.have{border-color:#468a0a;background:#f1ffe0}
+.res .tag{position:absolute;top:8px;left:8px;right:8px;background:rgba(79,154,10,.92);color:#fff;font:bold 10px/18px Verdana;border-radius:3px}
+.res .tag.busy{background:rgba(31,111,197,.92)}
 .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.row input{flex:1;min-width:140px;border:1px solid #7f9db9;padding:5px 6px}
-.side .btn{white-space:normal;text-align:left;line-height:1.3}
-.row .chk{display:flex;align-items:center;gap:6px}
+.row input[type=search],.row input[type=text]{flex:1;min-width:160px;border:1px solid #7f9db9;padding:7px 8px;font-size:14px;border-radius:2px;box-shadow:inset 0 1px 2px rgba(0,0,0,.15)}
 .tmdbnote{font-size:10px;color:#6b7a88;margin-top:6px}
+.side .btn{white-space:normal;text-align:left;line-height:1.3}
 .eye{position:absolute;z-index:5;left:-6px;top:6px;width:30px;height:30px;border-radius:50%;border:1px solid #2a4a6a;cursor:pointer;font-size:15px;line-height:28px;padding:0;
   background:linear-gradient(180deg,#ffffff 0%,#dfe7f0 50%,#c3d0de 51%,#e6eef7 100%);box-shadow:0 2px 4px rgba(0,0,0,.45);filter:grayscale(1);opacity:.85}
 .eye.on{filter:none;opacity:1;border-color:#468a0a;background:linear-gradient(180deg,#e6ffb8 0%,#8fd12d 50%,#62ad12 51%,#9ee23e 100%)}
@@ -252,11 +246,15 @@ table.list .mini .sw{position:absolute;inset:0;display:grid;place-items:center;c
 .case .seenrib{position:absolute;z-index:4;left:0;right:0;bottom:0;height:16px;background:rgba(79,154,10,.88);color:#fff;font:bold 9px/16px Verdana;letter-spacing:1px;text-align:center}
 td.seencell{cursor:pointer;text-align:center;font-size:15px}
 td.seencell:hover{background:#e6ffb8!important}
-.cloudst{display:flex;align-items:center;gap:6px;font-size:11px;color:#b9cde4}
+.cloudst{display:flex;align-items:center;gap:6px;font-size:11px;color:#b9cde4;cursor:pointer}
 .cloudst .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff6a00;box-shadow:0 0 6px #ff6a00}
 .cloudst .dot.on{background:#8fd12d;box-shadow:0 0 6px #8fd12d}
-.src{display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;background:#dbe8f6;border:1px solid #9bb4cf;color:#24476e;margin-left:4px;vertical-align:middle}
-.chip{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;background:#ffe9b0;border:1px solid #e0b040;color:#7a5200;margin-left:6px;vertical-align:middle}
+.cloudst .dot.busy{background:#5ab4ff;box-shadow:0 0 6px #5ab4ff;animation:pulse 1s infinite}
+.fmt{display:inline-flex;gap:4px;align-items:center;font-size:11px}
+.syncbar{display:none;margin:0 14px;padding:6px 10px;border:1px solid #e0b040;background:#fff8d6;border-radius:4px;font-size:11px;align-items:center;gap:10px}
+.syncbar.on{display:flex}
+.big-empty{padding:40px 20px;text-align:center}
+.big-empty .btn{font-size:14px;padding:9px 20px}
 </style>
 </head>
 <body>
@@ -274,26 +272,21 @@ td.seencell:hover{background:#e6ffb8!important}
   </svg>
   <div>
     <div class="logo"><b>DVDthèque</b> <i>2.0</i></div>
-    <div class="tagline">Ta vidéothèque perso · scan · fiches · étagère</div>
+    <div class="tagline">Ta vidéothèque perso · fiches TMDB · Google Sheets</div>
   </div>
   <div class="burst">BETA<br>!</div>
   <div class="sp"></div>
-  <div class="cloudst" id="cloudSt"><span class="dot"></span><span id="cloudTxt">Hors-ligne</span></div>
-  <button class="btn small" id="bLogin" style="display:none">☁ Connexion Google</button>
+  <div class="cloudst" id="cloudSt" title="Google Sheets"><span class="dot"></span><span id="cloudTxt">Hors-ligne</span></div>
+  <button class="btn small" id="bLogin" style="display:none">🔑 Connexion Google</button>
   <button class="btn grey small" id="bSettings" title="Réglages">⚙ Réglages</button>
 </div>
 
 <div class="toolbar">
-  <button class="btn green" id="bScan">📷 Scanner</button>
-  <button class="btn" id="bAdd">➕ Ajouter</button>
-  <button class="btn grey" id="bImport">📥 Importer</button>
+  <button class="btn green" id="bAdd">➕ Ajouter un DVD</button>
   <button class="btn grey" id="bExport">💾 Exporter</button>
-  <div class="search">🔍<input id="q" placeholder="Rechercher un titre, réal, acteur, code…" autocomplete="off"></div>
+  <div class="search">🔍<input id="q" placeholder="Rechercher dans ma collection…" autocomplete="off"></div>
   <select class="xp" id="fFilter" title="Filtre">
     <option value="all">Tous les DVD</option>
-    <option value="todo">À identifier</option>
-    <option value="partial">Fiche incomplète</option>
-    <option value="done">Fiches complètes</option>
     <option value="unseen">👁 Pas encore vus</option>
     <option value="seen">✔ Déjà vus</option>
     <option value="lent">Prêtés</option>
@@ -306,21 +299,20 @@ td.seencell:hover{background:#e6ffb8!important}
   </select>
   <div class="seg" role="group" aria-label="Affichage"><button id="vShelf" class="on">▦ Étagère</button><button id="vList">☰ Liste</button></div>
 </div>
+<div class="syncbar" id="syncbar" style="margin-top:10px"><span id="syncbarTxt"></span><span class="sp" style="flex:1"></span><button class="btn small" id="bResync">🔑 Se reconnecter à Google</button></div>
 
 <div class="wrap">
   <aside class="side">
     <div class="box"><h3>📀 Ma collection</h3><div class="in" id="stats"></div></div>
     <div class="box"><h3>⚡ Actions rapides</h3><div class="in" style="display:flex;flex-direction:column;gap:6px">
       <button class="btn green small" id="bRandom">🎲 Qu'est-ce qu'on regarde ce soir ?</button>
-      <button class="btn orange small" id="bBulkEan">🔢 Chercher les titres via les codes</button>
-      <button class="btn orange small" id="bBulkTmdb">🎬 Compléter les fiches (TMDB)</button>
-      <div class="hint" id="bulkInfo"></div>
+      <a class="btn grey small" id="lnkSheet" href="#" target="_blank" rel="noopener" style="display:none">📊 Ouvrir mon Google Sheet</a>
     </div></div>
-    <div class="box"><h3>🏷️ Genres</h3><div class="in cloud" id="cloud"><span class="hint">Les genres apparaîtront ici quand les fiches seront remplies.</span></div></div>
+    <div class="box"><h3>🏷️ Genres</h3><div class="in cloud" id="cloud"><span class="hint">Les genres apparaîtront ici.</span></div></div>
     <div class="box"><h3>💡 Astuces</h3><div class="in hint">
-      <p style="margin-top:0"><b>Scanner :</b> vise le code-barres, ça bipe et le DVD s'ajoute. Enchaîne toute la pile !</p>
-      <p><b>Identifier :</b> ouvre un DVD « ? », tape le titre et clique <b>Chercher sur TMDB</b> : choisis l'affiche, la fiche se remplit.</p>
-      <p style="margin-bottom:0"><b>Sauvegarde :</b> tout reste dans ce navigateur. Exporte une sauvegarde de temps en temps (Réglages).</p>
+      <p style="margin-top:0"><b>Ajouter :</b> tape le titre, clique sur l'affiche : c'est rangé. Enchaîne toute ta pile !</p>
+      <p><b>Vu / pas vu :</b> clique sur l'œil 👁 d'un boîtier.</p>
+      <p style="margin-bottom:0"><b>Google Sheets :</b> ta collection est un vrai tableur, modifiable aussi depuis Sheets (recharge la page ensuite).</p>
     </div></div>
   </aside>
 
@@ -330,20 +322,18 @@ td.seencell:hover{background:#e6ffb8!important}
   </main>
 </div>
 
-<!-- Scanner -->
-<div class="veil" id="vScan"><div class="win">
-  <div class="bar">📷 Scanner des DVD<span class="sp"></span><button class="x" data-close>×</button></div>
+<!-- Ajout -->
+<div class="veil" id="vAdd"><div class="win" style="width:min(900px,100%)">
+  <div class="bar">➕ Ajouter des DVD<span class="sp"></span><button class="x" data-close>×</button></div>
   <div class="body">
-    <div class="scanbox" id="scanbox"><video id="video" playsinline muted autoplay></video><div class="aim"></div><div class="flash" id="flash"></div><div class="msg" id="scanMsg">Démarrage de la caméra…</div></div>
-    <div class="row" style="margin-top:8px">
-      <label class="chk" style="font-size:11px"><input type="checkbox" id="openAfter"> Ouvrir la fiche après chaque scan</label>
-      <span class="sp" style="flex:1"></span>
-      <label class="btn grey small">🖼️ Depuis une photo<input type="file" accept="image/*" id="inScanPhoto" hidden></label>
+    <div class="row">
+      <input type="search" id="addQ" placeholder="Titre du film ou de la série… (ex : Le Fabuleux Destin d'Amélie Poulain)" autocomplete="off">
+      <span class="fmt">Format <select class="xp" id="addFmt"><option>DVD</option><option>Blu-ray</option><option>Coffret DVD</option><option>Coffret Blu-ray</option><option>4K UHD</option></select></span>
     </div>
-    <div class="codein"><input id="codeIn" placeholder="…ou tape le code EAN (13 chiffres)" inputmode="numeric" autocomplete="off"><button class="btn" id="bCode">Ajouter</button></div>
-    <div class="log" id="scanLog"><div class="hint">Les DVD scannés s'affichent ici.</div></div>
+    <div class="hint" style="margin-top:4px">Clique sur une affiche pour l'ajouter. Astuce : ajoute l'année pour départager (« Dune 1984 »).</div>
+    <div id="addOut"></div>
   </div>
-  <div class="foot"><span class="sp"></span><button class="btn green" data-close>Terminé</button></div>
+  <div class="foot"><button class="btn grey small" id="bManual">✍ Pas trouvé ? Ajouter à la main</button><span class="sp"></span><button class="btn green" data-close>Terminé</button></div>
 </div></div>
 
 <!-- Fiche -->
@@ -354,35 +344,32 @@ td.seencell:hover{background:#e6ffb8!important}
       <div class="left">
         <div class="bigcv" id="fCover"></div>
         <div class="btns">
-          <label class="btn grey small" style="justify-content:center">📷 Photo de la jaquette<input type="file" accept="image/*" capture="environment" id="inCover" hidden></label>
-          <button class="btn grey small" id="bNoCover" style="justify-content:center">✖ Retirer l'image</button>
-          <a class="btn grey small" style="justify-content:center" id="lnkSearch" href="#" target="_blank" rel="noopener">🌐 Chercher le code sur Google</a>
-          <button class="btn orange small" id="bEanLookup" style="justify-content:center">🔢 Fiche via le code (DVDFr)</button>
+          <button class="btn orange small" id="bRematch" style="justify-content:center">🎬 Changer de film (TMDB)</button>
+          <a class="btn grey small" id="lnkTmdb" href="#" target="_blank" rel="noopener" style="justify-content:center">🌐 Voir sur TMDB</a>
         </div>
       </div>
       <div>
-        <fieldset class="fieldset"><legend>🎬 Trouver le film</legend>
-          <div class="row"><input id="tmdbQ" placeholder="Titre à chercher…"><button class="btn orange small" id="bTmdb">Chercher sur TMDB</button></div>
+        <fieldset class="fieldset" id="rematchBox" style="display:none"><legend>🎬 Trouver le bon film</legend>
+          <div class="row"><input type="search" id="tmdbQ" placeholder="Titre à chercher…"><button class="btn orange small" id="bTmdb">Chercher</button></div>
           <div id="tmdbOut"></div>
         </fieldset>
         <div class="form" id="form">
-          <label class="full">Titre<input name="title" placeholder="ex : Neon Genesis Evangelion"></label>
+          <label class="full">Titre<input name="title"></label>
           <label>Titre original<input name="originalTitle"></label>
           <label>Année<input name="year" inputmode="numeric" maxlength="4"></label>
           <label>Réalisateur<input name="director"></label>
-          <label>Genre<input name="genre" placeholder="Action, Animation…"></label>
-          <label class="full">Acteurs<input name="actors" placeholder="séparés par des virgules"></label>
+          <label>Genre<input name="genre"></label>
+          <label class="full">Acteurs<input name="actors"></label>
           <label>Durée (min)<input name="duration" inputmode="numeric"></label>
           <label>Format<select name="format"><option>DVD</option><option>Blu-ray</option><option>Coffret DVD</option><option>Coffret Blu-ray</option><option>4K UHD</option></select></label>
-          <label>Édition<input name="edition" placeholder="Collector, Steelbook…"></label>
-          <label>Éditeur vidéo<input name="publisher"></label>
+          <label>Édition<input name="edition" placeholder="Collector, Saison 1, Steelbook…"></label>
+          <label>Code-barres (facultatif)<input name="ean" class="mono" inputmode="numeric"></label>
           <label class="full">Synopsis<textarea name="synopsis"></textarea></label>
           <label>Rangement<input name="location" placeholder="Meuble salon, étagère 2…"></label>
           <label>Prêté à<input name="lentTo" placeholder="Personne"></label>
           <label>Ma note<span class="starpick" id="starpick"></span></label>
           <label class="chk"><input type="checkbox" name="seen"> 👁 Déjà vu <span class="hint" id="seenAtTxt"></span></label>
           <label class="full">Notes perso<textarea name="notes" style="min-height:44px"></textarea></label>
-          <label>Code-barres (EAN)<input name="ean" class="mono" inputmode="numeric"></label>
         </div>
         <div id="aiBox"></div>
       </div>
@@ -392,59 +379,40 @@ td.seencell:hover{background:#e6ffb8!important}
     <button class="btn grey" data-close>Annuler</button><button class="btn green" id="bSave">✔ Enregistrer</button></div>
 </div></div>
 
-<!-- Import -->
-<div class="veil" id="vImport"><div class="win">
-  <div class="bar">📥 Importer<span class="sp"></span><button class="x" data-close>×</button></div>
-  <div class="body">
-    <p style="margin-top:0">Dépose un export d'appli de scan (<b>.txt</b> / <b>.csv</b>), une sauvegarde DVDthèque (<b>.json</b>), ou colle des codes-barres (un par ligne). Les codes déjà présents sont ignorés.</p>
-    <label class="tile" style="display:block"><div class="ic">📂</div><b>Choisir des fichiers</b><span class="hint">TXT / CSV / JSON, plusieurs à la fois</span>
-      <input type="file" accept=".txt,.csv,.json,text/plain,text/csv,application/json" multiple id="inImport"></label>
-    <div class="form" style="margin-top:10px"><label class="full">…ou colle tes codes<textarea id="pasteCodes" placeholder="3388334907392&#10;8717418223199"></textarea></label></div>
-    <div class="log" id="impLog" style="display:none"></div>
-  </div>
-  <div class="foot"><span class="sp"></span><button class="btn grey" data-close>Fermer</button><button class="btn green" id="bDoImport">Importer</button></div>
-</div></div>
-
 <!-- Export -->
 <div class="veil" id="vExport"><div class="win">
-  <div class="bar">💾 Exporter<span class="sp"></span><button class="x" data-close>×</button></div>
+  <div class="bar">💾 Exporter / restaurer<span class="sp"></span><button class="x" data-close>×</button></div>
   <div class="body">
     <fieldset class="fieldset"><legend>Tableur</legend>
-      <p style="margin-top:0">Liste CSV (Excel / LibreOffice) de toutes les fiches.</p>
+      <p style="margin-top:0">Liste CSV (Excel / LibreOffice). Avec Google connecté, ta collection est déjà dans Google Sheets.</p>
       <button class="btn green" id="bCsv">⬇ Télécharger le CSV</button></fieldset>
-    <fieldset class="fieldset"><legend>Sauvegarde complète</legend>
-      <p style="margin-top:0">Fichier <b>.json</b> avec tout (notes, images…). Sert à restaurer ou à passer d'un appareil à l'autre via <b>Importer</b>.</p>
-      <button class="btn" id="bJson">⬇ Télécharger la sauvegarde</button></fieldset>
+    <fieldset class="fieldset"><legend>Sauvegarde .json</legend>
+      <p style="margin-top:0">Copie complète de secours, que tu peux réimporter ici.</p>
+      <div class="row"><button class="btn" id="bJson">⬇ Télécharger la sauvegarde</button>
+      <label class="btn grey">📂 Restaurer une sauvegarde<input type="file" accept=".json,application/json" id="inRestore" hidden></label></div>
+      <div class="hint" id="restoreLog" style="margin-top:6px"></div></fieldset>
   </div>
   <div class="foot"><span class="sp"></span><button class="btn grey" data-close>Fermer</button></div>
 </div></div>
 
-<!-- Settings -->
+<!-- Réglages -->
 <div class="veil" id="vSettings"><div class="win">
   <div class="bar">⚙ Réglages<span class="sp"></span><button class="x" data-close>×</button></div>
   <div class="body">
-    <fieldset class="fieldset"><legend>☁ Sauvegarde cloud (Firebase)</legend>
-      <div id="cloudInfo" class="hint">…</div>
-      <div class="row" style="margin-top:6px"><button class="btn small" id="bLogin2">☁ Se connecter avec Google</button><button class="btn grey small" id="bLogout" style="display:none">Se déconnecter</button></div>
+    <fieldset class="fieldset"><legend>📊 Google Sheets</legend>
+      <div id="gInfo" class="hint">…</div>
+      <div class="row" style="margin-top:6px"><button class="btn small" id="bLogin2">🔑 Se connecter avec Google</button><button class="btn grey small" id="bLogout" style="display:none">Se déconnecter</button>
+        <a class="btn grey small" id="lnkSheet2" href="#" target="_blank" rel="noopener" style="display:none">📊 Ouvrir le tableur</a></div>
     </fieldset>
-    <fieldset class="fieldset"><legend>🎬 Clé API TMDB (fiches + affiches)</legend>
+    <fieldset class="fieldset"><legend>🎬 Clé API TMDB</legend>
       <p class="hint" id="tmdbProxyInfo" style="margin-top:0"></p>
-      <p style="margin-top:0">Gratuit : crée un compte sur <a href="https://www.themoviedb.org/signup" target="_blank" rel="noopener">themoviedb.org</a>, puis va dans <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener">Paramètres → API</a> et copie la <b>« Clé d'API »</b> (ou le « Jeton d'accès en lecture »).</p>
-      <div class="row"><input id="setTmdb" class="mono" placeholder="Colle ta clé ici" autocomplete="off"><button class="btn small" id="bTestTmdb">Tester</button></div>
+      <div class="row"><input type="text" id="setTmdb" class="mono" placeholder="Clé perso (facultatif si configurée sur le serveur)" autocomplete="off"><button class="btn small" id="bTestTmdb">Tester</button></div>
       <div class="hint" id="tmdbState" style="margin-top:4px"></div>
-      <p class="hint" style="margin-bottom:0">La clé reste dans ce navigateur, elle n'est jamais dans le code du site.</p>
     </fieldset>
-    <fieldset class="fieldset"><legend>🔢 Fiche depuis le code-barres</legend>
-      <label class="chk"><input type="checkbox" id="setUpc" checked> Après un scan, chercher la fiche automatiquement : DVDFr.com (base française) puis UPCitemdb en secours</label>
-      <p class="hint" id="eanProxyInfo" style="margin-bottom:0"></p>
+    <fieldset class="fieldset"><legend>⚠ Cet appareil</legend>
+      <button class="btn red small" id="bWipe">Vider le cache local</button> <span class="hint">Efface la copie locale (le Google Sheet n'est pas touché).</span>
     </fieldset>
-    <fieldset class="fieldset"><legend>🔊 Divers</legend>
-      <label class="chk"><input type="checkbox" id="setBeep" checked> Bip au scan</label>
-    </fieldset>
-    <fieldset class="fieldset"><legend>⚠ Zone dangereuse</legend>
-      <button class="btn red small" id="bWipe">Tout effacer</button> <span class="hint">Supprime toute la collection de ce navigateur.</span>
-    </fieldset>
-    <p class="tmdbnote">Données DVD : <a href="https://www.dvdfr.com" target="_blank" rel="noopener">DVDFr.com</a>. Ce site utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB.</p>
+    <p class="tmdbnote">Ce site utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB.</p>
   </div>
   <div class="foot"><span class="sp"></span><button class="btn green" id="bSaveSettings">✔ OK</button></div>
 </div></div>
@@ -453,12 +421,11 @@ td.seencell:hover{background:#e6ffb8!important}
 <div class="status">
   <span id="stState">⏳ Démarrage</span>
   <span id="stCount" class="hide-m">0 objet(s)</span>
-  <span class="sp marquee hide-m"><i>★ Bienvenue sur ta DVDthèque ★ Scanne, identifie, note et range tes films ★ Pense à rembobiner… ah non, c'est des DVD ★</i></span>
+  <span class="sp marquee hide-m"><i>★ Bienvenue sur ta DVDthèque ★ Cherche, ajoute, note et range tes films ★ Pense à rembobiner… ah non, c'est des DVD ★</i></span>
   <span>© 2006 ;)</span>
 </div>
 
 <script src="config.js"></script>
-<script id="seed" type="application/json">[{"ean":"3388334907392","format":"DVD","source":"import","addedAt":"2026-10-20T14:38:05Z","title":"Evangelion"},{"ean":"8717418223199","format":"DVD","source":"import","addedAt":"2026-10-20T14:44:00Z"},{"ean":"5413505306198","format":"DVD","source":"import","addedAt":"2026-10-20T14:44:06Z"},{"ean":"5413505305139","format":"DVD","source":"import","addedAt":"2026-10-20T14:44:10Z"},{"ean":"5060314993097","format":"DVD","source":"import","addedAt":"2026-10-20T14:44:28Z"},{"ean":"5053083091163","format":"DVD","source":"import","addedAt":"2026-10-20T14:44:33Z"},{"ean":"5051889701583","format":"DVD","source":"import","addedAt":"2026-10-20T14:44:36Z"},{"ean":"3700091002705","format":"DVD","source":"import","addedAt":"2026-10-20T14:44:39Z"},{"ean":"3333297645102","format":"DVD","source":"import","addedAt":"2026-10-20T14:44:43Z"},{"ean":"3700259837378","format":"DVD","source":"import","addedAt":"2026-10-20T14:44:47Z"},{"ean":"8717418132200","format":"DVD","source":"import","addedAt":"2026-10-20T14:46:39Z"},{"ean":"8717418084448","format":"DVD","source":"import","addedAt":"2026-10-20T14:46:56Z"},{"ean":"8717418048389","format":"DVD","source":"import","addedAt":"2026-10-20T14:47:03Z"},{"ean":"8717418084356","format":"DVD","source":"import","addedAt":"2026-10-20T14:47:06Z"},{"ean":"5410504989667","format":"DVD","source":"import","addedAt":"2026-10-20T14:47:10Z"},{"ean":"8717418005399","format":"DVD","source":"import","addedAt":"2026-10-20T14:47:19Z"},{"ean":"8717418003487","format":"DVD","source":"import","addedAt":"2026-10-20T14:47:52Z"},{"ean":"3459370404876","format":"DVD","source":"import","addedAt":"2026-10-20T14:47:56Z"},{"ean":"3459379414678","format":"DVD","source":"import","addedAt":"2026-10-20T14:48:02Z"},{"ean":"3459379403122","format":"DVD","source":"import","addedAt":"2026-10-20T14:48:05Z"},{"ean":"3344428015565","format":"DVD","source":"import","addedAt":"2026-10-20T14:49:02Z"},{"ean":"3344428041168","format":"DVD","source":"import","addedAt":"2026-10-20T14:49:08Z"},{"ean":"5051889005988","format":"DVD","source":"import","addedAt":"2026-10-20T14:49:13Z"},{"ean":"3259190302198","format":"DVD","source":"import","addedAt":"2026-10-20T14:49:34Z"},{"ean":"3475001016881","format":"DVD","source":"import","addedAt":"2026-10-20T14:50:51Z"},{"ean":"3475001020857","format":"DVD","source":"import","addedAt":"2026-10-20T14:50:54Z"},{"ean":"3475001021236","format":"DVD","source":"import","addedAt":"2026-10-20T14:50:59Z"},{"ean":"3475001031624","format":"DVD","source":"import","addedAt":"2026-10-20T14:51:04Z"},{"ean":"3475001037374","format":"DVD","source":"import","addedAt":"2026-10-20T14:51:07Z"},{"ean":"3700173205130","format":"DVD","source":"import","addedAt":"2026-10-20T14:52:09Z"},{"ean":"3760031485203","format":"DVD","source":"import","addedAt":"2026-10-20T14:52:13Z"},{"ean":"7321950186327","format":"DVD","source":"import","addedAt":"2026-10-20T14:52:18Z"},{"ean":"5051889529644","format":"DVD","source":"import","addedAt":"2026-10-20T14:52:22Z"},{"ean":"5051889620655","format":"DVD","source":"import","addedAt":"2026-10-20T14:52:26Z"},{"ean":"3384442033862","format":"DVD","source":"import","addedAt":"2026-10-20T14:52:30Z"},{"ean":"3333297557771","format":"DVD","source":"import","addedAt":"2026-10-20T14:52:39Z"},{"ean":"3700301027603","format":"DVD","source":"import","addedAt":"2026-10-20T14:53:26Z"},{"ean":"3333297953610","format":"DVD","source":"import","addedAt":"2026-10-20T14:53:31Z"},{"ean":"5053083158910","format":"DVD","source":"import","addedAt":"2026-10-20T14:53:36Z"},{"ean":"3000310209589","format":"DVD","source":"import","addedAt":"2026-10-20T14:54:14Z"},{"ean":"3344428015619","format":"DVD","source":"import","addedAt":"2026-10-20T14:54:22Z"},{"ean":"3396380203078","format":"DVD","source":"import","addedAt":"2026-10-20T14:54:40Z"},{"ean":"3475001028198","format":"DVD","source":"import","addedAt":"2026-10-20T14:54:48Z"},{"ean":"3322069948749","format":"DVD","source":"import","addedAt":"2026-10-20T14:55:08Z"},{"ean":"0542005190428","format":"DVD","source":"import","addedAt":"2026-10-20T14:55:13Z"},{"ean":"3322069948251","format":"DVD","source":"import","addedAt":"2026-10-20T14:55:21Z"},{"ean":"5414474301009","format":"DVD","source":"import","addedAt":"2026-10-20T14:55:23Z"},{"ean":"3384442008815","format":"DVD","source":"import","addedAt":"2026-10-20T14:55:59Z"},{"ean":"3384442044028","format":"DVD","source":"import","addedAt":"2026-10-20T14:56:03Z"},{"ean":"5051889018322","format":"DVD","source":"import","addedAt":"2026-10-20T14:56:13Z"},{"ean":"5051889062431","format":"DVD","source":"import","addedAt":"2026-10-20T14:56:17Z"}]</script>
 <script>
 (() => {
 "use strict";
@@ -466,93 +433,59 @@ const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const nowIso = () => new Date().toISOString();
+const CFG = window.DVDT_CONFIG || {};
 
-/* ================= Settings ================= */
+/* ================= Petits réglages locaux ================= */
 const S = {
   get(k, d) { try { const v = localStorage.getItem("dvdt." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem("dvdt." + k, JSON.stringify(v)); } catch {} },
 };
 
-/* ================= Storage (IndexedDB, fallback localStorage) ================= */
-const Store = {
+/* ================= Cache local (IndexedDB) ================= */
+const Local = {
   db: null,
-  open() {
-    return new Promise(res => {
-      if (!("indexedDB" in window)) return res(null);
-      const rq = indexedDB.open("dvdtheque", 1);
-      rq.onupgradeneeded = () => { const db = rq.result; if (!db.objectStoreNames.contains("dvds")) db.createObjectStore("dvds"); };
-      rq.onsuccess = () => { this.db = rq.result; res(this.db); };
-      rq.onerror = () => res(null);
-    });
-  },
-  tx(mode, fn) {
-    return new Promise((res, rej) => { const t = this.db.transaction("dvds", mode); const st = t.objectStore("dvds"); const r = fn(st); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); });
-  },
-  async all() {
-    if (!this.db) return Object.entries(S.get("fallback", {}));
-    return new Promise((res, rej) => { const out = []; const t = this.db.transaction("dvds"); const c = t.objectStore("dvds").openCursor();
-      c.onsuccess = () => { const cur = c.result; if (cur) { out.push([cur.key, cur.value]); cur.continue(); } else res(out); }; c.onerror = () => rej(c.error); });
-  },
-  async put(id, v) { if (!this.db) { const o = S.get("fallback", {}); o[id] = v; S.set("fallback", o); return; } await this.tx("readwrite", st => st.put(v, id)); },
-  async del(id) { if (!this.db) { const o = S.get("fallback", {}); delete o[id]; S.set("fallback", o); return; } await this.tx("readwrite", st => st.delete(id)); },
-  async clear() { if (!this.db) { S.set("fallback", {}); return; } await this.tx("readwrite", st => st.clear()); },
+  open() { return new Promise(res => { if (!("indexedDB" in window)) return res(null);
+    const rq = indexedDB.open("dvdtheque3", 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore("dvds");
+    rq.onsuccess = () => { this.db = rq.result; res(this.db); }; rq.onerror = () => res(null); }); },
+  run(mode, fn) { return new Promise((res, rej) => { const t = this.db.transaction("dvds", mode); fn(t.objectStore("dvds")); t.oncomplete = res; t.onerror = () => rej(t.error); }); },
+  async all() { if (!this.db) return Object.entries(S.get("fallback", {}));
+    return new Promise((res, rej) => { const out = []; const c = this.db.transaction("dvds").objectStore("dvds").openCursor();
+      c.onsuccess = () => { const k = c.result; if (k) { out.push([k.key, k.value]); k.continue(); } else res(out); }; c.onerror = () => rej(c.error); }); },
+  async put(id, v) { if (!this.db) { const o = S.get("fallback", {}); o[id] = v; S.set("fallback", o); return; } await this.run("readwrite", st => st.put(v, id)); },
+  async del(id) { if (!this.db) { const o = S.get("fallback", {}); delete o[id]; S.set("fallback", o); return; } await this.run("readwrite", st => st.delete(id)); },
+  async replaceAll(entries) { if (!this.db) { S.set("fallback", Object.fromEntries(entries)); return; } await this.run("readwrite", st => { st.clear(); entries.forEach(([k, v]) => st.put(v, k)); }); },
 };
 
 let items = new Map();
 let view = S.get("view", "shelf");
-let current = null, draft = null;
-
-async function save(id, data, {push = true} = {}) {
-  if (!data.updatedAt) data.updatedAt = nowIso();
-  try { await Store.put(id, data); if (data.deleted) items.delete(id); else items.set(id, data); }
-  catch (e) { balloon("Oups", "Enregistrement impossible : " + (e && e.name === "QuotaExceededError" ? "plus de place dans le navigateur." : (e && e.message || e))); throw e; }
-  if (push) Cloud.push(id, data);
-}
-async function removeItem(id) { await save(id, { deleted: true, updatedAt: nowIso() }); }
-const CFG = window.DVDT_CONFIG || {};
+let current = null, draft = null, genreFilter = null;
 
 /* ================= Helpers ================= */
-const FIELDS = ["title","originalTitle","year","director","genre","actors","duration","format","edition","publisher","synopsis","location","lentTo","rating","seen","notes","ean"];
+const FIELDS = ["title","originalTitle","year","director","genre","actors","duration","format","edition","synopsis","location","lentTo","rating","seen","notes","ean"];
 function hash(s){let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0}
-function validEan(code){
-  if(!/^\d{8}$|^\d{12,13}$/.test(code))return false;
-  const d=code.padStart(13,"0").split("").map(Number);
-  const sum=d.slice(0,12).reduce((a,n,i)=>a+n*(i%2?3:1),0);
-  return (10-sum%10)%10===d[12];
-}
-const cleanCode = s => String(s||"").replace(/\D/g,"");
-const isTodo = d => !d.title;
-const isComplete = d => d.title && d.year && d.director && d.genre;
+const newId = () => "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 function starsHtml(n){n=+n||0;let s="";for(let i=1;i<=5;i++)s+=i<=n?"★":'<span class="off">★</span>';return '<span class="stars">'+s+"</span>"}
-const nowIso = () => new Date().toISOString();
-
 function genCover(d){
-  const h=hash(d.ean||d.title||"x"); const hue=h%360, hue2=(hue+40+(h>>8)%80)%360;
-  const bg=d.title?`linear-gradient(160deg,hsl(${hue} 55% 38%),hsl(${hue2} 60% 14%))`:`linear-gradient(160deg,#2b3f5c,#0b1422)`;
-  let bars="";
-  if(d.ean){let x=0;const parts=[];for(let i=0;i<d.ean.length*3;i++){const w=1+((+d.ean[i%d.ean.length]+i)%3);parts.push(`${i%2?"transparent":"#000"} ${x}px ${x+w}px`);x+=w}
-    bars=`<div class="bc"><div style="background:linear-gradient(90deg,${parts.join(",")})"></div>${esc(d.ean)}</div>`;}
-  const mid=d.title?`<div class="t">${esc(d.title)}</div>`:`<div class="t"><span class="q">?</span></div>`;
-  return `<div class="gen" style="background:${bg}"><div class="dv">DVD<span>VIDEO</span></div>${mid}${bars}</div>`;
+  const h=hash(d.tmdbId||d.title||"x"); const hue=h%360, hue2=(hue+40+(h>>8)%80)%360;
+  return `<div class="gen" style="background:linear-gradient(160deg,hsl(${hue} 55% 38%),hsl(${hue2} 60% 14%))"><div class="dv">DVD<span>VIDEO</span></div><div class="t">${esc(d.title||"?")}</div></div>`;
 }
-const coverHtml = d => d.cover?`<img src="${esc(d.cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:genCover(d);
-function miniHtml(d){if(d.cover)return `<img src="${esc(d.cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">`;const h=hash(d.ean||d.title||"x")%360;
-  return `<div class="sw" style="background:${d.title?`linear-gradient(160deg,hsl(${h} 55% 40%),hsl(${h} 60% 15%))`:"linear-gradient(160deg,#2b3f5c,#0b1422)"}">${d.title?esc(d.title[0].toUpperCase()):"?"}</div>`}
+const coverHtml = d => d.cover ? `<img src="${esc(d.cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : genCover(d);
+function miniHtml(d){ if(d.cover)return `<img src="${esc(d.cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
+  const h=hash(d.title||"x")%360; return `<div class="sw" style="background:linear-gradient(160deg,hsl(${h} 55% 40%),hsl(${h} 60% 15%))">${esc((d.title||"?")[0].toUpperCase())}</div>`; }
+let bt; function balloon(t,m){const b=$("#balloon");b.innerHTML=`<b>${esc(t)}</b>${esc(m||"")}`;b.classList.add("on");clearTimeout(bt);bt=setTimeout(()=>b.classList.remove("on"),3800)}
 
-/* ================= Rendering ================= */
-let genreFilter=null;
+/* ================= Rendu ================= */
 function filtered(){
   const q=$("#q").value.trim().toLowerCase(), f=$("#fFilter").value, so=$("#fSort").value;
   let arr=[...items.entries()].map(([id,d])=>({id,...d}));
-  if(q)arr=arr.filter(d=>[d.title,d.originalTitle,d.director,d.actors,d.genre,d.ean,d.notes,d.lentTo,d.location].join(" ").toLowerCase().includes(q));
-  if(f==="todo")arr=arr.filter(isTodo);
-  if(f==="partial")arr=arr.filter(d=>d.title&&!isComplete(d));
-  if(f==="done")arr=arr.filter(isComplete);
+  if(q)arr=arr.filter(d=>[d.title,d.originalTitle,d.director,d.actors,d.genre,d.notes,d.lentTo,d.location,d.edition,d.year].join(" ").toLowerCase().includes(q));
   if(f==="unseen")arr=arr.filter(d=>!d.seen);
   if(f==="seen")arr=arr.filter(d=>d.seen);
   if(f==="lent")arr=arr.filter(d=>d.lentTo);
   if(genreFilter)arr=arr.filter(d=>(d.genre||"").toLowerCase().split(/[,/]/).map(s=>s.trim()).includes(genreFilter));
-  const t=d=>(d.title||"￿"+(d.ean||"")).toLowerCase();
+  const t=d=>(d.title||"").toLowerCase().replace(/^(le |la |les |l'|the )/,"");
   arr.sort((a,b)=>{
     if(so==="added")return String(b.addedAt||"").localeCompare(String(a.addedAt||""));
     if(so==="year")return (+b.year||0)-(+a.year||0)||t(a).localeCompare(t(b),"fr");
@@ -562,151 +495,72 @@ function filtered(){
   return arr;
 }
 function render(){
-  const arr=filtered();
+  const arr=filtered(), c=$("#content");
   $("#count").textContent=`— ${arr.length} DVD`+(genreFilter?` · genre « ${genreFilter} » (cliquer pour retirer)`:"");
   $("#viewTitle").textContent=view==="shelf"?"Étagère":"Liste";
   $("#vShelf").classList.toggle("on",view==="shelf");$("#vList").classList.toggle("on",view==="list");
-  const c=$("#content");
   if(!items.size){
-    c.innerHTML=`<div class="empty"><div style="font-size:40px">📀</div><p><b>Ta DVDthèque est vide.</b></p><p>Clique sur <b>Scanner</b> ou <b>Importer</b> pour commencer.</p></div>`;
+    c.innerHTML=`<div class="big-empty"><div style="font-size:44px">📀</div><p><b>Ta DVDthèque est vide.</b></p><p>Ajoute ton premier film en cherchant son titre.</p><button class="btn green" data-add>➕ Ajouter un DVD</button></div>`;
   } else if(!arr.length){
     c.innerHTML=`<div class="empty">Aucun DVD ne correspond. 🙁</div>`;
   } else if(view==="shelf"){
     const recent=Date.now()-3*864e5;
     c.innerHTML=`<div class="shelf">${arr.map(d=>{
-      const badge=d.lentTo?`<span class="badge lent">PRÊTÉ</span>`:isTodo(d)?`<span class="badge">?</span>`:(Date.parse(d.updatedAt||0)>recent?`<span class="badge new">NEW!</span>`:"");
+      const badge=d.lentTo?`<span class="badge lent">PRÊTÉ</span>`:(Date.parse(d.addedAt||0)>recent?`<span class="badge new">NEW!</span>`:"");
       return `<div class="case" tabindex="0" data-id="${esc(d.id)}"><div class="cv">${coverHtml(d)}${d.seen?'<div class="seenrib">✔ VU</div>':""}</div>${badge}
-        <button class="eye${d.seen?" on":""}" data-seen="${esc(d.id)}" title="${d.seen?"Vu — cliquer pour marquer non vu":"Pas vu — cliquer pour marquer vu"}">👁</button>
-        <div class="tt">${esc(d.title||"À identifier")}</div><div class="sub">${d.title?esc([d.year,d.director].filter(Boolean).join(" · ")):'<span class="mono">'+esc(d.ean||"")+"</span>"}</div></div>`}).join("")}</div>`;
+        <button class="eye${d.seen?" on":""}" data-seen="${esc(d.id)}" title="${d.seen?"Vu — cliquer pour marquer pas vu":"Pas vu — cliquer pour marquer vu"}">👁</button>
+        <div class="tt">${esc(d.title)}</div><div class="sub">${esc([d.year,d.director].filter(Boolean).join(" · "))}</div></div>`}).join("")}</div>`;
   } else {
-    c.innerHTML=`<div style="overflow:auto"><table class="list"><thead><tr><th></th><th data-s="title">Titre</th><th data-s="year">Année</th><th>Réalisateur</th><th>Genre</th><th data-s="rating">Note</th><th>Vu</th><th>Code</th></tr></thead><tbody>${arr.map(d=>`
-      <tr data-id="${esc(d.id)}"><td><div class="mini">${miniHtml(d)}</div></td><td><b>${esc(d.title||"— à identifier —")}</b>${d.titleToCheck?'<span class="chip">à vérifier</span>':""}${d.lentTo?` <span class="warn">(prêté à ${esc(d.lentTo)})</span>`:""}</td>
-      <td>${esc(d.year||"")}</td><td>${esc(d.director||"")}</td><td>${esc(d.genre||"")}</td><td>${d.rating?starsHtml(d.rating):""}</td><td class="seencell" data-seen="${esc(d.id)}" title="Cliquer pour changer">${d.seen?"✅":"⬜"}</td><td class="mono">${esc(d.ean||"")}</td></tr>`).join("")}</tbody></table></div>`;
+    c.innerHTML=`<div style="overflow:auto"><table class="list"><thead><tr><th></th><th data-s="title">Titre</th><th data-s="year">Année</th><th>Réalisateur</th><th>Genre</th><th>Format</th><th data-s="rating">Note</th><th>Vu</th></tr></thead><tbody>${arr.map(d=>`
+      <tr data-id="${esc(d.id)}"><td><div class="mini">${miniHtml(d)}</div></td><td><b>${esc(d.title)}</b>${d.edition?` <span class="hint">(${esc(d.edition)})</span>`:""}${d.lentTo?` <span class="warn">(prêté à ${esc(d.lentTo)})</span>`:""}</td>
+      <td>${esc(d.year||"")}</td><td>${esc(d.director||"")}</td><td>${esc(d.genre||"")}</td><td>${esc(d.format||"")}</td><td>${d.rating?starsHtml(d.rating):""}</td>
+      <td class="seencell" data-seen="${esc(d.id)}" title="Cliquer pour changer">${d.seen?"✅":"⬜"}</td></tr>`).join("")}</tbody></table></div>`;
   }
   renderSide();
-  $("#stCount").textContent=items.size+" objet(s)";
+  $("#stCount").textContent=items.size+" DVD";
 }
 function renderSide(){
-  const all=[...items.values()];
-  const n=all.length, todo=all.filter(isTodo).length, done=all.filter(isComplete).length;
+  const all=[...items.values()], n=all.length;
   const seen=all.filter(d=>d.seen).length, lent=all.filter(d=>d.lentTo).length, mins=all.reduce((a,d)=>a+(+d.duration||0),0);
-  const pct=n?Math.round((n-todo)/n*100):0;
+  const pct=n?Math.round(seen/n*100):0;
   $("#stats").innerHTML=`
     <div class="stat"><span>DVD au total</span><b>${n}</b></div>
-    <div class="stat"><span>Identifiés</span><b>${n-todo}</b></div>
-    <div class="stat"><span>Fiches complètes</span><b>${done}</b></div>
     <div class="stat"><span>👁 Déjà vus</span><b>${seen}</b></div>
-    <div class="stat"><span>🍿 Reste à voir</span><b>${all.filter(d=>d.title&&!d.seen).length}</b></div>
+    <div class="stat"><span>🍿 Reste à voir</span><b>${n-seen}</b></div>
     <div class="stat"><span>Prêtés</span><b>${lent}</b></div>
     ${mins?`<div class="stat"><span>Durée totale</span><b>${Math.floor(mins/60)} h ${String(mins%60).padStart(2,"0")}</b></div>`:""}
-    <div class="prog"><i style="width:${pct}%"></i></div><div class="hint">${pct}% identifiés${todo?` · <a href="#" id="goTodo">${todo} à identifier</a>`:""}</div>`;
+    <div class="prog"><i style="width:${pct}%"></i></div><div class="hint">${pct}% de la collection vue</div>`;
   const g={};all.forEach(d=>(d.genre||"").split(/[,/]/).map(s=>s.trim().toLowerCase()).filter(Boolean).forEach(x=>g[x]=(g[x]||0)+1));
   const ks=Object.keys(g).sort();
   if(ks.length){const mx=Math.max(...Object.values(g));
     $("#cloud").innerHTML=ks.map(k=>`<a data-g="${esc(k)}" style="font-size:${11+Math.round(g[k]/mx*9)}px;${genreFilter===k?"background:#ffffb8;font-weight:bold":""}">${esc(k)}</a>`).join(" ");}
-  const partial=all.filter(d=>d.title&&!isComplete(d)).length;
-  $("#bBulkEan").textContent=`🔢 Chercher ${todo} titre${todo>1?"s":""} via les codes`;$("#bBulkEan").disabled=!todo||bulkRun;
-  $("#bBulkTmdb").textContent=`🎬 Compléter ${partial} fiche${partial>1?"s":""} (TMDB)`;$("#bBulkTmdb").disabled=!partial||bulkRun;
+  else $("#cloud").innerHTML='<span class="hint">Les genres apparaîtront ici.</span>';
 }
 
-/* ================= Windows ================= */
+/* ================= Fenêtres ================= */
 function openWin(id){$("#"+id).classList.add("on")}
-function closeVeil(v){v.classList.remove("on");if(v.id==="vScan")stopCamera()}
+function closeVeil(v){v.classList.remove("on")}
 $$("[data-close]").forEach(b=>b.addEventListener("click",()=>closeVeil(b.closest(".veil"))));
 $$(".veil").forEach(v=>v.addEventListener("mousedown",e=>{if(e.target===v)closeVeil(v)}));
 document.addEventListener("keydown",e=>{if(e.key==="Escape")$$(".veil.on").forEach(closeVeil)});
 
-/* ================= Fiche ================= */
-function openFiche(id, preset){
-  current=id||null;
-  const base=id?items.get(id)||{}:{format:"DVD",...(preset||{})};
-  draft={...base};
-  $("#ficheTitle").textContent=id?(base.title||"DVD à identifier"):"Nouveau DVD";
-  fillForm(draft);
-  $("#aiBox").innerHTML=base.titleToCheck?`<div class="ai">⚠ Titre trouvé automatiquement via le code-barres : <b>vérifie-le</b>, puis cherche-le sur TMDB pour compléter.</div>`:"";
-  $("#tmdbQ").value=base.title||"";$("#tmdbOut").innerHTML="";
-  $("#bDelete").style.display=id?"":"none";
-  openWin("vFiche");
-  if(!base.title)setTimeout(()=>$("#tmdbQ").focus(),60);
-}
-function field(k){return $("#form").querySelector(`[name="${k}"]`)}
-function fillForm(d){
-  FIELDS.forEach(k=>{const el=field(k);if(!el)return;if(el.type==="checkbox")el.checked=!!d[k];else el.value=d[k]??"";});
-  drawStars(d.rating||0);drawCover();updateSearchLink();
-  $("#seenAtTxt").textContent=d.seen&&d.seenAt?"(le "+new Date(d.seenAt).toLocaleDateString("fr-FR")+")":"";
-}
-function readForm(){
-  FIELDS.forEach(k=>{const el=field(k);if(!el)return;draft[k]=el.type==="checkbox"?el.checked:el.value.trim();});
-  draft.ean=cleanCode(draft.ean);return draft;
-}
-function drawCover(){$("#fCover").innerHTML=coverHtml(draft)}
-function updateSearchLink(){
-  const code=cleanCode(field("ean").value);
-  $("#lnkSearch").style.display=code?"":"none";$("#bEanLookup").style.display=code?"":"none";
-  if(code)$("#lnkSearch").href="https://www.google.com/search?q="+encodeURIComponent(code+" DVD");
-}
-$("#form").addEventListener("input",e=>{if(e.target.name==="title"){draft.title=e.target.value;if(!draft.cover)drawCover()} if(e.target.name==="ean")updateSearchLink()});
-function drawStars(n){draft.rating=n;$("#starpick").innerHTML=[1,2,3,4,5].map(i=>`<span data-v="${i}" style="color:${i<=n?"#ffb400":"#c9d3dd"}">★</span>`).join("")}
-$("#starpick").addEventListener("click",e=>{e.preventDefault();const v=+e.target.dataset.v;if(v)drawStars(draft.rating===v?0:v)});
-$("#bNoCover").addEventListener("click",()=>{delete draft.cover;drawCover()});
-$("#tmdbQ").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#bTmdb").click()}});
-
-function cleanRecord(o){const r={};for(const[k,v]of Object.entries(o)){if(v===undefined||v===null)continue;if(v===""&&k!=="title")continue;r[k]=v}return r}
-$("#bSave").addEventListener("click",async()=>{
-  readForm();
-  if(!draft.title&&!draft.ean){balloon("Fiche vide","Mets au moins un titre ou un code-barres.");return}
-  let id=current;
-  if(id&&draft.ean&&draft.ean!==id&&validEan(draft.ean)&&!items.has(draft.ean)&&id.startsWith("x")){ await removeItem(id); id=draft.ean; }
-  if(!id){
-    id=draft.ean&&validEan(draft.ean)?draft.ean:"x"+Date.now().toString(36);
-    if(items.has(id)){balloon("Déjà là !","Ce code-barres est déjà dans ta collection.");openFiche(id);return}
-    draft.addedAt=nowIso();draft.source=draft.source||"manuel";
-  }
-  if(draft.title!==(items.get(id)||{}).title)delete draft.titleToCheck;
-  if(draft.seen&&!draft.seenAt)draft.seenAt=nowIso();if(!draft.seen)delete draft.seenAt;
-  draft.updatedAt=nowIso();
-  try{await save(id,cleanRecord(draft));render();closeVeil($("#vFiche"));balloon("Enregistré ✔",draft.title||draft.ean)}catch{}
-});
-$("#bDelete").addEventListener("click",async()=>{
-  const b=$("#bDelete");
-  if(b.dataset.arm!=="1"){b.dataset.arm="1";b.textContent="Confirmer ?";setTimeout(()=>{b.dataset.arm="";b.textContent="🗑 Supprimer"},3500);return}
-  b.dataset.arm="";b.textContent="🗑 Supprimer";
-  await removeItem(current);render();closeVeil($("#vFiche"));balloon("Supprimé","Le DVD a été retiré de l'étagère.");
-});
-
-/* ================= Images ================= */
-function loadImage(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file);const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=u})}
-function toCanvas(img,maxSide){const s=Math.min(1,maxSide/Math.max(img.naturalWidth||img.videoWidth,img.naturalHeight||img.videoHeight));const c=document.createElement("canvas");
-  c.width=Math.round((img.naturalWidth||img.videoWidth)*s);c.height=Math.round((img.naturalHeight||img.videoHeight)*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);return c}
-async function coverThumb(file){
-  const img=await loadImage(file);const W=270,H=380;const c=document.createElement("canvas");c.width=W;c.height=H;const g=c.getContext("2d");
-  const r=Math.max(W/img.naturalWidth,H/img.naturalHeight);const w=img.naturalWidth*r,h=img.naturalHeight*r;g.drawImage(img,(W-w)/2,(H-h)/2,w,h);
-  return c.toDataURL("image/jpeg",.75);
-}
-$("#inCover").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;readForm();draft.cover=await coverThumb(f);drawCover()});
-
-/* ================= Proxy (fonctions Vercel /api/*) ================= */
-let proxyOK=null;
-async function hasProxy(){
-  if(proxyOK!==null)return proxyOK;
-  try{const r=await fetch("api/ping",{cache:"no-store"});const j=r.ok?await r.json():null;proxyOK=!!(j&&j.ok);window.__proxyTmdb=!!(j&&j.tmdb)}catch{proxyOK=false}
-  return proxyOK;
-}
-
 /* ================= TMDB ================= */
 const TMDB="https://api.themoviedb.org/3", IMG="https://image.tmdb.org/t/p/";
-function tmdbKey(){return (S.get("tmdbKey","")||CFG.tmdbKey||"").trim()}
+let proxyOK=null, proxyTmdb=false;
+async function hasProxy(){
+  if(proxyOK!==null)return proxyOK;
+  try{const r=await fetch("api/ping",{cache:"no-store"});const j=r.ok?await r.json():null;proxyOK=!!(j&&j.ok);proxyTmdb=!!(j&&j.tmdb)}catch{proxyOK=false}
+  return proxyOK;
+}
+const tmdbKey=()=>(S.get("tmdbKey","")||CFG.tmdbKey||"").trim();
 async function tmdb(path,params={}){
-  const all={language:"fr-FR",...params};
-  let r;
-  if(await hasProxy()&&window.__proxyTmdb&&!S.get("tmdbKey","")){
-    const u=new URL("api/tmdb",location.href);u.searchParams.set("path",path);Object.entries(all).forEach(([k,v])=>u.searchParams.set(k,v));
-    r=await fetch(u);
+  const all={language:"fr-FR",...params};let r;
+  if(!S.get("tmdbKey","")&&await hasProxy()&&proxyTmdb){
+    const u=new URL("api/tmdb",location.href);u.searchParams.set("path",path);Object.entries(all).forEach(([k,v])=>u.searchParams.set(k,v));r=await fetch(u);
   }else{
     const key=tmdbKey();if(!key)throw new Error("nokey");
     const u=new URL(TMDB+path);Object.entries(all).forEach(([k,v])=>u.searchParams.set(k,v));
-    const h={accept:"application/json"};
-    if(key.startsWith("eyJ"))h.Authorization="Bearer "+key;else u.searchParams.set("api_key",key);
+    const h={accept:"application/json"};if(key.startsWith("eyJ"))h.Authorization="Bearer "+key;else u.searchParams.set("api_key",key);
     r=await fetch(u,{headers:h});
   }
   if(r.status===401)throw new Error("badkey");
@@ -714,464 +568,322 @@ async function tmdb(path,params={}){
   if(!r.ok)throw new Error("HTTP "+r.status);
   return r.json();
 }
-function tmdbErr(e){return e.message==="nokey"?`Ajoute ta clé TMDB dans <a href="#" data-settings>⚙ Réglages</a>.`:e.message==="badkey"?`Clé TMDB refusée : vérifie-la dans <a href="#" data-settings>⚙ Réglages</a>.`:`TMDB injoignable (${esc(e.message)}).`}
+function tmdbErr(e){return e.message==="nokey"?`Ajoute la clé TMDB (voir <a href="#" data-settings>⚙ Réglages</a>).`:e.message==="badkey"?`Clé TMDB refusée : vérifie-la dans <a href="#" data-settings>⚙ Réglages</a>.`:`TMDB injoignable (${esc(e.message)}).`}
 async function tmdbSearch(q){
   const yr=(q.match(/\b(19|20)\d{2}\b/)||[])[0];const query=q.replace(/\b(19|20)\d{2}\b/,"").replace(/\s+/g," ").trim()||q;
   const r=await tmdb("/search/multi",{query,include_adult:"false"});
   let list=(r.results||[]).filter(x=>x.media_type==="movie"||x.media_type==="tv");
   if(yr)list.sort((a,b)=>Math.abs(+(a.release_date||a.first_air_date||"0").slice(0,4)-yr)-Math.abs(+(b.release_date||b.first_air_date||"0").slice(0,4)-yr));
-  return list.slice(0,12);
+  return list.slice(0,18);
 }
 async function tmdbDetails(type,id){
   const d=await tmdb(`/${type}/${id}`,{append_to_response:"credits"});
   const crew=(d.credits&&d.credits.crew)||[];
-  const director=type==="movie"?crew.filter(c=>c.job==="Director").map(c=>c.name).join(", "):(d.created_by||[]).map(c=>c.name).join(", ");
   return {
-    title:d.title||d.name, originalTitle:d.original_title||d.original_name,
-    year:(d.release_date||d.first_air_date||"").slice(0,4), director,
+    title:d.title||d.name||"", originalTitle:d.original_title||d.original_name||"",
+    year:(d.release_date||d.first_air_date||"").slice(0,4),
+    director:type==="movie"?crew.filter(c=>c.job==="Director").map(c=>c.name).join(", "):(d.created_by||[]).map(c=>c.name).join(", "),
     actors:((d.credits&&d.credits.cast)||[]).slice(0,5).map(c=>c.name).join(", "),
     genre:(d.genres||[]).slice(0,3).map(g=>g.name).join(", "),
-    duration:d.runtime||(d.episode_run_time||[])[0]||"",
+    duration:String(d.runtime||(d.episode_run_time||[])[0]||""),
     synopsis:d.overview||"", cover:d.poster_path?IMG+"w342"+d.poster_path:"",
     tmdbId:type+"/"+id
   };
 }
-$("#bTmdb").addEventListener("click",async()=>{
-  const q=$("#tmdbQ").value.trim()||field("title").value.trim();
-  const out=$("#tmdbOut");
-  if(!q){out.innerHTML=`<div class="hint" style="margin-top:6px">Tape un titre (même approximatif). Pas d'idée ? Essaie « Fiche via le code » ou « Chercher le code sur Google ».</div>`;return}
-  out.innerHTML=`<div class="ai"><div class="spinner"></div>Recherche de « ${esc(q)} »…</div>`;
-  try{
-    const list=await tmdbSearch(q);
-    if(!list.length){out.innerHTML=`<div class="ai warn">Aucun résultat. Essaie le titre original ou moins de mots.</div>`;return}
-    out.innerHTML=`<div class="hint" style="margin-top:6px">Clique sur le bon film :</div><div class="results">${list.map(x=>`
-      <div class="res" data-t="${x.media_type}" data-i="${x.id}">${x.poster_path?`<img src="${IMG}w185${x.poster_path}" alt="" loading="lazy" referrerpolicy="no-referrer">`:'<div class="noimg">🎞</div>'}
-      <b>${esc(x.title||x.name)}</b>${esc((x.release_date||x.first_air_date||"").slice(0,4))}${x.media_type==="tv"?" · série":""}</div>`).join("")}</div>`;
-  }catch(e){out.innerHTML=`<div class="ai">${tmdbErr(e)}</div>`}
-});
-function applyFields(det,{overwrite=true,keepCover=false}={}){
-  readForm();
-  ["title","originalTitle","year","director","actors","genre","duration","synopsis","edition","publisher","format"].forEach(k=>{
-    if(det[k]===""||det[k]==null)return;if(!overwrite&&draft[k])return;draft[k]=String(det[k]);const el=field(k);if(el)el.value=det[k];});
-  if(det.cover&&!(keepCover&&draft.cover)&&!(draft.cover||"").startsWith("data:"))draft.cover=det.cover;
-  drawCover();
+function resultCards(list,{haveCheck=true}={}){
+  const have=new Set([...items.values()].map(d=>d.tmdbId).filter(Boolean));
+  return `<div class="results">${list.map(x=>{const tid=x.media_type+"/"+x.id;const h=haveCheck&&have.has(tid);
+    return `<div class="res${h?" have":""}" data-t="${x.media_type}" data-i="${x.id}">${h?'<div class="tag">✔ DANS TA COLLECTION</div>':""}
+    ${x.poster_path?`<img src="${IMG}w185${x.poster_path}" alt="" loading="lazy" referrerpolicy="no-referrer">`:'<div class="noimg">🎞</div>'}
+    <b>${esc(x.title||x.name)}</b>${esc((x.release_date||x.first_air_date||"").slice(0,4))}${x.media_type==="tv"?" · série":""}</div>`}).join("")}</div>`;
 }
-$("#tmdbOut").addEventListener("click",async e=>{
-  const r=e.target.closest(".res");if(!r)return;
-  $("#tmdbOut").innerHTML=`<div class="ai"><div class="spinner"></div>Récupération de la fiche…</div>`;
-  try{
-    const det=await tmdbDetails(r.dataset.t,r.dataset.i);
-    applyFields(det);draft.tmdbId=det.tmdbId;delete draft.titleToCheck;
-    $("#tmdbOut").innerHTML=`<div class="ai ok">✔ Fiche remplie avec <b>${esc(det.title)}</b> (${esc(det.year)}). Vérifie puis clique <b>Enregistrer</b>.</div>`;
-  }catch(err){$("#tmdbOut").innerHTML=`<div class="ai">${tmdbErr(err)}</div>`}
-});
 document.addEventListener("click",e=>{if(e.target.closest("[data-settings]")){e.preventDefault();openSettings()}});
 
-/* ================= Code-barres → fiche : DVDFr, puis UPCitemdb ================= */
-function tidyTitle(t){
-  return String(t||"")
-    .replace(/\[[^\]]*\]|\((?:dvd|blu-?ray|region|zone|import|pal|ntsc|fr|french|edition|édition)[^)]*\)/gi," ")
-    .replace(/\b(dvd|blu-?ray|zone\s*2|region\s*2|pal|import|édition simple|edition simple|box ?set|widescreen)\b/gi," ")
-    .replace(/\s*[-–:|,]\s*$/,"").replace(/\s{2,}/g," ").trim();
+/* ================= Ajout par TMDB ================= */
+let addTimer=null, addSeq=0;
+function openAdd(){openWin("vAdd");$("#addFmt").value=S.get("lastFmt","DVD");setTimeout(()=>$("#addQ").focus(),60);if(!$("#addQ").value)$("#addOut").innerHTML=""}
+$("#bAdd").addEventListener("click",openAdd);
+document.addEventListener("click",e=>{if(e.target.closest("[data-add]"))openAdd()});
+$("#addFmt").addEventListener("change",()=>S.set("lastFmt",$("#addFmt").value));
+async function runAddSearch(){
+  const q=$("#addQ").value.trim(),out=$("#addOut"),seq=++addSeq;
+  if(q.length<2){out.innerHTML="";return}
+  out.innerHTML=`<div class="ai"><span class="spinner"></span>Recherche de « ${esc(q)} »…</div>`;
+  try{const list=await tmdbSearch(q);if(seq!==addSeq)return;
+    out.innerHTML=list.length?resultCards(list):`<div class="ai warn">Aucun résultat. Essaie le titre original, moins de mots, ou ajoute-le à la main.</div>`;}
+  catch(e){if(seq===addSeq)out.innerHTML=`<div class="ai">${tmdbErr(e)}</div>`}
 }
-function xmlDoc(txt){const d=new DOMParser().parseFromString(txt,"text/xml");return d.querySelector("parsererror")?null:d}
-function xt(root,...sels){for(const s of sels){const el=root.querySelector(s);const v=el&&el.textContent.trim();if(v)return v}return ""}
-function parseDvdfr(doc){
-  const dvd=doc.querySelector("dvd")||doc.documentElement;
-  const stars=[...dvd.querySelectorAll("star")];
-  const byType=t=>stars.filter(s=>(s.getAttribute("type")||"").toLowerCase().startsWith(t)).map(s=>s.textContent.trim()).filter(Boolean);
-  const cats=[...dvd.querySelectorAll("categories categorie, categorie, genre")].map(c=>c.textContent.trim()).filter(Boolean);
-  const media=xt(dvd,"media").toUpperCase();
-  const dur=xt(dvd,"duree","duration");
-  return {
-    dvdfrId:xt(dvd,"id"),
-    title:xt(dvd,"titres fr","titres > fr","titre_fr","titre"),
-    originalTitle:xt(dvd,"titres vo","titres > vo","titre_vo"),
-    year:(xt(dvd,"annee","year").match(/\d{4}/)||[""])[0],
-    edition:xt(dvd,"edition"),
-    publisher:xt(dvd,"editeur","editeurs editeur"),
-    cover:xt(dvd,"cover","jaquette"),
-    director:byType("réal").concat(byType("real")).slice(0,2).join(", "),
-    actors:byType("act").slice(0,5).join(", "),
-    genre:[...new Set(cats)].slice(0,3).join(", "),
-    duration:(dur.match(/\d+/)||[""])[0],
-    synopsis:xt(dvd,"synopsis"),
-    format:media.includes("BR")||media.includes("BLU")?"Blu-ray":media?"DVD":"",
-    source:"DVDFr"
-  };
-}
-async function dvdfrLookup(code){
-  if(!await hasProxy())return null;
-  const r=await fetch("api/dvdfr?gencode="+encodeURIComponent(code));
-  if(!r.ok)throw new Error("DVDFr HTTP "+r.status);
-  const doc=xmlDoc(await r.text());if(!doc)return null;
-  const first=doc.querySelector("dvd");if(!first)return null;
-  let res=parseDvdfr(doc);
-  if(res.dvdfrId){try{const r2=await fetch("api/dvdfr?id="+encodeURIComponent(res.dvdfrId));if(r2.ok){const d2=xmlDoc(await r2.text());if(d2){const full=parseDvdfr(d2);for(const k in full)if(full[k])res[k]=full[k]}}}catch{}}
-  return res.title?res:null;
-}
-async function upcLookup(code){
-  const url=(await hasProxy())?"api/upc?code="+encodeURIComponent(code):"https://api.upcitemdb.com/prod/trial/lookup?upc="+encodeURIComponent(code);
-  const r=await fetch(url,{headers:{accept:"application/json"}});
-  if(r.status===429)throw new Error("quota");
-  if(!r.ok)throw new Error("HTTP "+r.status);
-  const j=await r.json();const it=(j.items||[])[0];
-  return it&&tidyTitle(it.title)?{title:tidyTitle(it.title),raw:it.title,publisher:it.brand||"",source:"UPCitemdb",guess:true}:null;
-}
-/** Solution A : DVDFr (fiche complète française). Solution B : UPCitemdb (titre seul, à vérifier). */
-async function eanLookup(code){
-  let errs=[];
-  try{const a=await dvdfrLookup(code);if(a)return a}catch(e){errs.push(e.message)}
-  try{const b=await upcLookup(code);if(b)return b}catch(e){if(e.message==="quota")errs.push("UPCitemdb : limite du jour");else errs.push("UPCitemdb injoignable")}
-  if(errs.length){const e=new Error(errs.join(" · "));e.soft=true;throw e}
-  return null;
-}
-async function lookupAndStore(id){
-  const d=items.get(id);if(!d||d.title||!d.ean)return "skip";
-  const res=await eanLookup(d.ean);
-  if(!res||!res.title)return "none";
-  const nd={...d,updatedAt:nowIso(),infoSource:res.source};
-  ["title","originalTitle","year","director","actors","genre","duration","synopsis","edition","publisher","cover","dvdfrId"].forEach(k=>{if(res[k]&&!nd[k])nd[k]=String(res[k])});
-  if(res.format)nd.format=res.format;
-  if(res.guess)nd.titleToCheck=true;
-  await save(id,nd);return res.title;
-}
-$("#bEanLookup").addEventListener("click",async()=>{
-  const code=cleanCode(field("ean").value);if(!code)return;
-  $("#aiBox").innerHTML=`<div class="ai"><div class="spinner"></div>Recherche du code ${esc(code)} sur DVDFr…</div>`;
-  try{const r=await eanLookup(code);
-    if(r&&r.title){
-      applyFields(r,{overwrite:!r.guess});if(r.dvdfrId)draft.dvdfrId=r.dvdfrId;draft.infoSource=r.source;$("#tmdbQ").value=r.originalTitle||r.title;
-      $("#aiBox").innerHTML=r.guess?`<div class="ai">UPCitemdb a trouvé « ${esc(r.raw)} ». Titre proposé : <b>${esc(r.title)}</b> — vérifie, puis <b>Chercher sur TMDB</b> pour compléter.</div>`
-        :`<div class="ai ok">✔ Trouvé sur <b>DVDFr</b> : <b>${esc(r.title)}</b>${r.edition?" — "+esc(r.edition):""}. ${!r.synopsis||!r.genre?"Tu peux compléter avec TMDB au-dessus. ":""}Vérifie puis <b>Enregistrer</b>.</div>`;}
-    else $("#aiBox").innerHTML=`<div class="ai warn">Ce code est inconnu de DVDFr et d'UPCitemdb. Plan C : « Chercher le code sur Google », puis tape le titre et cherche sur TMDB.</div>`;
-  }catch(e){$("#aiBox").innerHTML=`<div class="ai warn">Recherche impossible (${esc(e.message)}).${proxyOK===false?" La recherche DVDFr ne marche qu'une fois le site en ligne sur Vercel (dossier <b>api/</b>).":""}</div>`}
-});
-
-/* ================= Bulk ================= */
-let bulkRun=false;
-async function runBulk(btn,list,fn,label){
-  if(bulkRun){bulkRun=false;return}
-  bulkRun=true;let ok=0,i=0;const info=$("#bulkInfo");
-  btn.disabled=false;
-  for(const id of list){
-    if(!bulkRun)break;i++;btn.textContent=`⏹ Stop (${i}/${list.length})`;
-    try{const r=await fn(id);if(r&&r!=="none"&&r!=="skip")ok++;render();}
-    catch(e){info.innerHTML=`<span class="warn">${esc(e.userMsg||e.message)}</span>`;if(e.stop)break}
-    await sleep(1100);
-  }
-  bulkRun=false;render();balloon("Terminé",`${ok} ${label}.`);
-  if(!info.textContent)info.textContent=`Dernière passe : ${ok} ${label}.`;
-}
-$("#bBulkEan").addEventListener("click",function(){
-  const list=[...items.entries()].filter(([,d])=>!d.title&&d.ean).map(([id])=>id);
-  $("#bulkInfo").textContent="";
-  let fails=0;
-  runBulk(this,list,async id=>{try{const r=await lookupAndStore(id);fails=0;return r}catch(e){fails++;e.stop=fails>=3;e.userMsg="Recherche par code : "+e.message+(proxyOK===false?" (DVDFr ne marche qu'une fois le site en ligne sur Vercel)":"");throw e}},"fiche(s) trouvée(s) via les codes");
-});
-$("#bBulkTmdb").addEventListener("click",function(){
-  if(!tmdbKey()){balloon("Clé TMDB requise","Ajoute-la dans ⚙ Réglages.");openSettings();return}
-  const list=[...items.entries()].filter(([,d])=>d.title&&!isComplete(d)).map(([id])=>id);
-  $("#bulkInfo").textContent="";
-  runBulk(this,list,async id=>{
-    const d=items.get(id);let res;
-    try{res=await tmdbSearch(d.title+(d.year?" "+d.year:""))}catch(e){e.stop=true;e.userMsg=e.message==="badkey"?"Clé TMDB refusée.":"TMDB injoignable.";throw e}
-    if(!res.length)return "none";
-    const det=await tmdbDetails(res[0].media_type,res[0].id);
-    const nd={...d};["originalTitle","year","director","actors","genre","duration","synopsis"].forEach(k=>{if(!nd[k]&&det[k])nd[k]=String(det[k])});
-    if(!nd.cover&&det.cover)nd.cover=det.cover;nd.tmdbId=det.tmdbId;nd.updatedAt=nowIso();
-    await save(id,nd);return "ok";
-  },"fiche(s) complétée(s) — jette un œil aux affiches");
-});
-
-/* ================= Scanner ================= */
-let stream=null, scanTimer=null, zxReader=null, lastCode="", lastAt=0, audioCtx=null;
-function beep(ok=true){
-  if(!S.get("beep",true))return;
-  try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-    o.type="square";o.frequency.value=ok?1760:440;g.gain.value=.06;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+(ok?.09:.25));}catch{}
-}
-function flash(){const f=$("#flash");f.classList.add("on");setTimeout(()=>f.classList.remove("on"),60)}
-function logScan(html,cls=""){const l=$("#scanLog");if(l.querySelector(".hint"))l.innerHTML="";const d=document.createElement("div");d.className=cls;d.innerHTML=html;l.prepend(d)}
-let zxingP=null;
-function loadZXing(){
-  if(window.ZXing)return Promise.resolve(window.ZXing);
-  if(zxingP)return zxingP;
-  const urls=["https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js","https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"];
-  zxingP=urls.reduce((p,u)=>p.catch(()=>new Promise((res,rej)=>{const s=document.createElement("script");s.src=u;s.onload=()=>window.ZXing?res(window.ZXing):rej(new Error("zxing"));s.onerror=()=>rej(new Error("zxing"));document.head.appendChild(s)})),Promise.reject());
-  zxingP.catch(()=>{zxingP=null});return zxingP;
-}
-function zxHints(Z){const h=new Map();h.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A,Z.BarcodeFormat.UPC_E]);h.set(Z.DecodeHintType.TRY_HARDER,true);return h}
-async function nativeDetector(){
-  if(!("BarcodeDetector" in window))return null;
-  try{const f=await BarcodeDetector.getSupportedFormats();if(!f.includes("ean_13"))return null;return new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e"].filter(x=>f.includes(x))})}catch{return null}
-}
-async function startCamera(){
-  const msg=$("#scanMsg"),video=$("#video");
-  msg.textContent="Démarrage de la caméra…";
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){msg.textContent="Caméra indisponible (le site doit être en https). Utilise « Depuis une photo » ou tape le code.";return}
+$("#addQ").addEventListener("input",()=>{clearTimeout(addTimer);addTimer=setTimeout(runAddSearch,450)});
+$("#addQ").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();clearTimeout(addTimer);runAddSearch()}});
+$("#addOut").addEventListener("click",async e=>{
+  const r=e.target.closest(".res");if(!r||r.dataset.busy)return;
+  if(r.classList.contains("have")&&r.dataset.confirm!=="1"){r.dataset.confirm="1";r.querySelector(".tag").textContent="RE-CLIQUE POUR UN 2e EXEMPLAIRE";return}
+  r.dataset.busy="1";r.insertAdjacentHTML("afterbegin",'<div class="tag busy">AJOUT…</div>');
   try{
-    const det=await nativeDetector();
-    if(det){
-      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false});
-      video.srcObject=stream;await video.play();msg.textContent="Vise le code-barres du DVD…";
-      const loop=async()=>{if(!stream)return;try{if(video.readyState>=2){const r=await det.detect(video);if(r&&r[0])onCode(r[0].rawValue)}}catch{} scanTimer=setTimeout(loop,180)};loop();
-    }else{
-      msg.textContent="Chargement du lecteur…";
-      const Z=await loadZXing();zxReader=new Z.BrowserMultiFormatReader(zxHints(Z),250);
-      await zxReader.decodeFromConstraints({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}}},video,(res)=>{if(res)onCode(res.getText())});
-      stream=video.srcObject;msg.textContent="Vise le code-barres du DVD…";
+    const det=await tmdbDetails(r.dataset.t,r.dataset.i);
+    const id=newId();const d={...det,format:$("#addFmt").value,addedAt:nowIso(),updatedAt:nowIso()};
+    await saveItem(id,d);render();
+    r.querySelectorAll(".tag").forEach(t=>t.remove());r.classList.add("have");r.dataset.confirm="";
+    r.insertAdjacentHTML("afterbegin",`<div class="tag">✔ AJOUTÉ</div>`);
+    balloon("Ajouté ✔",`${d.title}${d.year?" ("+d.year+")":""} — ${d.format}`);
+  }catch(err){r.querySelectorAll(".tag").forEach(t=>t.remove());balloon("Oups",err.message==="nokey"||err.message==="badkey"?"Problème de clé TMDB (⚙ Réglages).":"Ajout impossible ("+err.message+").")}
+  finally{delete r.dataset.busy}
+});
+$("#bManual").addEventListener("click",()=>{closeVeil($("#vAdd"));openFiche(null,{title:$("#addQ").value.trim(),format:$("#addFmt").value})});
+
+/* ================= Fiche ================= */
+const field=k=>$("#form").querySelector(`[name="${k}"]`);
+function openFiche(id,preset){
+  current=id||null;
+  draft={...(id?items.get(id):{format:"DVD",...(preset||{})})};
+  $("#ficheTitle").textContent=id?draft.title:"Nouveau DVD";
+  FIELDS.forEach(k=>{const el=field(k);if(!el)return;if(el.type==="checkbox")el.checked=!!draft[k];else el.value=draft[k]??"";});
+  drawStars(+draft.rating||0);drawCover();
+  $("#seenAtTxt").textContent=draft.seen&&draft.seenAt?"(le "+new Date(draft.seenAt).toLocaleDateString("fr-FR")+")":"";
+  $("#lnkTmdb").style.display=draft.tmdbId?"":"none";if(draft.tmdbId)$("#lnkTmdb").href="https://www.themoviedb.org/"+draft.tmdbId+"?language=fr";
+  $("#rematchBox").style.display=id?"none":"";$("#tmdbQ").value=draft.title||"";$("#tmdbOut").innerHTML="";$("#aiBox").innerHTML="";
+  $("#bDelete").style.display=id?"":"none";
+  openWin("vFiche");
+}
+function readForm(){FIELDS.forEach(k=>{const el=field(k);if(!el)return;draft[k]=el.type==="checkbox"?el.checked:el.value.trim()});return draft}
+function drawCover(){$("#fCover").innerHTML=coverHtml(draft)}
+function drawStars(n){draft.rating=n||"";$("#starpick").innerHTML=[1,2,3,4,5].map(i=>`<span data-v="${i}" style="color:${i<=n?"#ffb400":"#c9d3dd"}">★</span>`).join("")}
+$("#starpick").addEventListener("click",e=>{e.preventDefault();const v=+e.target.dataset.v;if(v)drawStars(+draft.rating===v?0:v)});
+$("#form").addEventListener("input",e=>{if(e.target.name==="title"&&!draft.cover){draft.title=e.target.value;drawCover()}});
+$("#bRematch").addEventListener("click",()=>{$("#rematchBox").style.display="";$("#tmdbQ").value=field("title").value;$("#tmdbQ").focus()});
+$("#tmdbQ").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#bTmdb").click()}});
+$("#bTmdb").addEventListener("click",async()=>{
+  const q=$("#tmdbQ").value.trim(),out=$("#tmdbOut");if(!q)return;
+  out.innerHTML=`<div class="ai"><span class="spinner"></span>Recherche…</div>`;
+  try{const list=await tmdbSearch(q);out.innerHTML=list.length?resultCards(list,{haveCheck:false}):`<div class="ai warn">Aucun résultat.</div>`}catch(e){out.innerHTML=`<div class="ai">${tmdbErr(e)}</div>`}
+});
+$("#tmdbOut").addEventListener("click",async e=>{
+  const r=e.target.closest(".res");if(!r)return;
+  $("#tmdbOut").innerHTML=`<div class="ai"><span class="spinner"></span>Récupération de la fiche…</div>`;
+  try{const det=await tmdbDetails(r.dataset.t,r.dataset.i);readForm();
+    ["title","originalTitle","year","director","actors","genre","duration","synopsis"].forEach(k=>{draft[k]=det[k];const el=field(k);if(el)el.value=det[k]});
+    draft.cover=det.cover;draft.tmdbId=det.tmdbId;drawCover();
+    $("#tmdbOut").innerHTML=`<div class="ai ok">✔ Fiche remplie avec <b>${esc(det.title)}</b> (${esc(det.year)}). Clique <b>Enregistrer</b>.</div>`;
+  }catch(err){$("#tmdbOut").innerHTML=`<div class="ai">${tmdbErr(err)}</div>`}
+});
+$("#bSave").addEventListener("click",async()=>{
+  readForm();
+  if(!draft.title){balloon("Titre manquant","Donne au moins un titre.");return}
+  if(draft.seen&&!draft.seenAt)draft.seenAt=nowIso();if(!draft.seen)draft.seenAt="";
+  const id=current||newId();if(!current)draft.addedAt=nowIso();
+  draft.updatedAt=nowIso();
+  try{$("#bSave").disabled=true;await saveItem(id,{...draft});render();closeVeil($("#vFiche"));balloon("Enregistré ✔",draft.title)}
+  catch(e){balloon("Oups",String(e.message||e))}finally{$("#bSave").disabled=false}
+});
+$("#bDelete").addEventListener("click",async()=>{
+  const b=$("#bDelete");
+  if(b.dataset.arm!=="1"){b.dataset.arm="1";b.textContent="Confirmer ?";setTimeout(()=>{b.dataset.arm="";b.textContent="🗑 Supprimer"},3500);return}
+  b.dataset.arm="";b.textContent="🗑 Supprimer";
+  const t=items.get(current)?.title;await deleteItem(current);render();closeVeil($("#vFiche"));balloon("Supprimé",t||"");
+});
+async function toggleSeen(id){
+  const d=items.get(id);if(!d)return;
+  const nd={...d,seen:!d.seen,seenAt:!d.seen?nowIso():"",updatedAt:nowIso()};
+  await saveItem(id,nd);render();balloon(nd.seen?"👁 Marqué comme vu":"Marqué comme pas vu",nd.title);
+}
+
+/* ================= Google Sheets ================= */
+const COLS=["id","titre","titre_original","annee","realisateur","acteurs","genres","duree_min","format","edition","vu","vu_le","note","prete_a","rangement","notes","synopsis","affiche","tmdb_id","code_barres","ajoute_le","modifie_le"];
+const MAP={id:"id",titre:"title",titre_original:"originalTitle",annee:"year",realisateur:"director",acteurs:"actors",genres:"genre",duree_min:"duration",format:"format",edition:"edition",vu:"seen",vu_le:"seenAt",note:"rating",prete_a:"lentTo",rangement:"location",notes:"notes",synopsis:"synopsis",affiche:"cover",tmdb_id:"tmdbId",code_barres:"ean",ajoute_le:"addedAt",modifie_le:"updatedAt"};
+const LASTCOL=String.fromCharCode(64+COLS.length); // V
+const TAB="DVD";
+const toRow=(id,d)=>COLS.map(c=>{const k=MAP[c];if(c==="id")return id;const v=d[k];
+  if(c==="vu")return !!v; if(["annee","duree_min","note"].includes(c))return v===""||v==null?"":(isNaN(+v)?String(v):+v); return v==null?"":String(v)});
+function fromRow(r){const o={};COLS.forEach((c,i)=>{let v=r[i];if(v===undefined||v===null)v="";const k=MAP[c];
+  if(c==="vu")o[k]=v===true||String(v).toUpperCase()==="TRUE"||String(v).toLowerCase()==="oui";else o[k]=String(v)});return o}
+
+const G={
+  token:null,exp:0,client:null,sheetId:S.get("sheetId",null),gid:S.get("sheetGid",null),email:S.get("gEmail",""),
+  pending:S.get("pending",{}),busy:false,want:S.get("gWant",false),
+  enabled(){return !!CFG.googleClientId},
+  ok(){return this.token&&Date.now()<this.exp-60000},
+  loadGis(){return new Promise((res,rej)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return res();
+    const s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.async=true;s.onload=()=>res();s.onerror=()=>rej(new Error("Google ne répond pas"));document.head.appendChild(s)})},
+  async init(){
+    if(!this.enabled()){this.status("off");return}
+    try{await this.loadGis()}catch(e){this.status("err",e.message);return}
+    this.client=google.accounts.oauth2.initTokenClient({client_id:CFG.googleClientId,
+      scope:"https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email",
+      callback:r=>this.onToken(r),error_callback:e=>{this.status(this.want?"expired":"out");if(e&&e.type!=="popup_closed")balloon("Connexion Google",e.message||e.type||"refusée")}});
+    this.status(this.want?"expired":"out");
+  },
+  login(){if(!this.client){balloon("Google non configuré","Ajoute googleClientId dans config.js (voir README).");return}
+    this.client.requestAccessToken({prompt:this.want?"":"select_account",login_hint:this.email||undefined})},
+  logout(){if(this.token&&window.google)google.accounts.oauth2.revoke(this.token,()=>{});this.token=null;this.want=false;S.set("gWant",false);this.status("out")},
+  async onToken(r){
+    if(r.error){this.status("err",r.error);return}
+    this.token=r.access_token;this.exp=Date.now()+(+r.expires_in||3600)*1000;this.want=true;S.set("gWant",true);
+    try{const u=await this.api("https://www.googleapis.com/oauth2/v3/userinfo");if(u.email){this.email=u.email;S.set("gEmail",u.email)}}catch{}
+    await this.sync(true);
+  },
+  async api(url,opt={}){
+    if(!this.ok())throw Object.assign(new Error("token"),{code:"token"});
+    const r=await fetch(url,{...opt,headers:{Authorization:"Bearer "+this.token,"Content-Type":"application/json",...(opt.headers||{})}});
+    if(r.status===401){this.token=null;this.status("expired");throw Object.assign(new Error("token"),{code:"token"})}
+    if(r.status===404)throw Object.assign(new Error("introuvable"),{code:404});
+    if(!r.ok){let m="HTTP "+r.status;try{m=(await r.json()).error.message||m}catch{}throw new Error(m)}
+    return r.status===204?null:r.json();
+  },
+  sheetsUrl(p){return "https://sheets.googleapis.com/v4/spreadsheets/"+this.sheetId+p},
+  async ensureSheet(){
+    if(this.sheetId){try{const m=await this.api(this.sheetsUrl("?fields=sheets.properties"));const s=(m.sheets||[]).find(x=>x.properties.title===TAB);if(s){this.gid=s.properties.sheetId;S.set("sheetGid",this.gid);return}}catch(e){if(e.code!==404)throw e}}
+    // chercher un tableur « DVDthèque » déjà créé par l'appli (autre appareil)
+    const q=encodeURIComponent("name='DVDthèque' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
+    const f=await this.api(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime)&orderBy=modifiedTime desc`);
+    if(f.files&&f.files.length){this.sheetId=f.files[0].id;S.set("sheetId",this.sheetId);
+      const m=await this.api(this.sheetsUrl("?fields=sheets.properties"));const s=(m.sheets||[]).find(x=>x.properties.title===TAB)||m.sheets[0];this.gid=s.properties.sheetId;S.set("sheetGid",this.gid);return}
+    // sinon : le créer
+    const c=await this.api("https://sheets.googleapis.com/v4/spreadsheets",{method:"POST",body:JSON.stringify({
+      properties:{title:"DVDthèque",locale:"fr_FR"},sheets:[{properties:{title:TAB,gridProperties:{frozenRowCount:1,columnCount:COLS.length}}}]})});
+    this.sheetId=c.spreadsheetId;this.gid=c.sheets[0].properties.sheetId;S.set("sheetId",this.sheetId);S.set("sheetGid",this.gid);
+    await this.api(this.sheetsUrl(`/values/${TAB}!A1:${LASTCOL}1?valueInputOption=RAW`),{method:"PUT",body:JSON.stringify({values:[COLS]})});
+    const g=this.gid;
+    await this.api(this.sheetsUrl(":batchUpdate"),{method:"POST",body:JSON.stringify({requests:[
+      {repeatCell:{range:{sheetId:g,startRowIndex:0,endRowIndex:1},cell:{userEnteredFormat:{backgroundColor:{red:.12,green:.27,blue:.45},textFormat:{bold:true,foregroundColor:{red:1,green:1,blue:1}}}},fields:"userEnteredFormat(backgroundColor,textFormat)"}},
+      {setDataValidation:{range:{sheetId:g,startRowIndex:1,startColumnIndex:10,endColumnIndex:11},rule:{condition:{type:"BOOLEAN"}}}},
+      {updateDimensionProperties:{range:{sheetId:g,dimension:"COLUMNS",startIndex:0,endIndex:1},properties:{hiddenByUser:true},fields:"hiddenByUser"}},
+      {updateDimensionProperties:{range:{sheetId:g,dimension:"COLUMNS",startIndex:1,endIndex:2},properties:{pixelSize:260},fields:"pixelSize"}},
+      {updateDimensionProperties:{range:{sheetId:g,dimension:"COLUMNS",startIndex:16,endIndex:17},properties:{pixelSize:320},fields:"pixelSize"}}
+    ]})});
+  },
+  async readAll(){
+    const v=await this.api(this.sheetsUrl(`/values/${TAB}!A2:${LASTCOL}?valueRenderOption=UNFORMATTED_VALUE`));
+    const rows=v.values||[];const map=new Map();
+    rows.forEach((r,i)=>{const d=fromRow(r);if(!d.id||!d.title)return;const id=d.id;delete d.id;map.set(id,{row:i+2,d})});
+    return map;
+  },
+  async rowOf(id){const v=await this.api(this.sheetsUrl(`/values/${TAB}!A:A`));const col=v.values||[];for(let i=1;i<col.length;i++)if(col[i]&&col[i][0]===id)return i+1;return 0},
+  async writeOne(id,d){
+    const row=await this.rowOf(id);const values=[toRow(id,d)];
+    if(row)await this.api(this.sheetsUrl(`/values/${TAB}!A${row}:${LASTCOL}${row}?valueInputOption=RAW`),{method:"PUT",body:JSON.stringify({values})});
+    else await this.api(this.sheetsUrl(`/values/${TAB}!A:${LASTCOL}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`),{method:"POST",body:JSON.stringify({values})});
+  },
+  async deleteOne(id){
+    const row=await this.rowOf(id);if(!row)return;
+    await this.api(this.sheetsUrl(":batchUpdate"),{method:"POST",body:JSON.stringify({requests:[{deleteDimension:{range:{sheetId:this.gid,dimension:"ROWS",startIndex:row-1,endIndex:row}}}]})});
+  },
+  queue(id,op){this.pending[id]=op;S.set("pending",this.pending);this.status(this.ok()?"busy":this.want?"expired":"out")},
+  async flush(){
+    for(const [id,op] of Object.entries(this.pending)){
+      if(op==="del")await this.deleteOne(id);else{const d=items.get(id);if(d)await this.writeOne(id,d)}
+      delete this.pending[id];S.set("pending",this.pending);
     }
-  }catch(e){
-    msg.textContent=e&&e.name==="NotAllowedError"?"Accès à la caméra refusé. Autorise-le dans le navigateur, ou utilise « Depuis une photo ».":
-      e&&e.message==="zxing"?"Le lecteur de code-barres n'a pas pu se charger (connexion ?). Tape le code à la main.":"Caméra indisponible : "+(e&&e.message||e);
+  },
+  async sync(first){
+    if(this.busy||!this.ok())return;this.busy=true;this.status("busy");
+    try{
+      await this.ensureSheet();
+      if(first&&!S.get("linked:"+this.sheetId,false)){
+        // 1re liaison de cet appareil : envoyer ce qui n'est que local
+        const remote=await this.readAll();
+        for(const [id] of items)if(!remote.has(id)&&!this.pending[id])this.pending[id]="put";
+        S.set("pending",this.pending);S.set("linked:"+this.sheetId,true);
+      }
+      await this.flush();
+      const remote=await this.readAll();
+      const next=new Map([...remote].map(([id,x])=>[id,x.d]));
+      for(const [id,op] of Object.entries(this.pending)){if(op==="put"&&items.has(id))next.set(id,items.get(id));if(op==="del")next.delete(id)}
+      items=next;await Local.replaceAll([...items]);render();
+      this.status("on");
+      if(first)balloon("📊 Google Sheets",`${items.size} DVD synchronisé(s).`);
+    }catch(e){if(e.code==="token")this.status("expired");else this.status("err",e.message)}
+    finally{this.busy=false}
+  },
+  async push(id,op){
+    if(!this.enabled())return;
+    this.queue(id,op);
+    if(!this.ok()||this.busy)return;
+    try{this.status("busy");await this.ensureSheet();await this.flush();this.status("on")}
+    catch(e){if(e.code==="token")this.status("expired");else this.status("err",e.message)}
+  },
+  link(){return this.sheetId?"https://docs.google.com/spreadsheets/d/"+this.sheetId+"/edit":""},
+  status(st,msg){
+    const n=Object.keys(this.pending).length;
+    const txt={off:"Mode local",out:"Non connecté",expired:"Google : reconnexion",busy:"Synchronisation…",on:"📊 Google Sheets ✔",err:"Erreur Google"}[st];
+    $("#cloudTxt").textContent=txt;
+    const dot=$("#cloudSt .dot");dot.classList.toggle("on",st==="on");dot.classList.toggle("busy",st==="busy");
+    $("#bLogin").style.display=st==="out"?"":"none";
+    $("#bLogin2").style.display=(st==="out"||st==="expired"||st==="off")?"":"none";
+    $("#bLogout").style.display=this.want?"":"none";
+    const l=this.link();["#lnkSheet","#lnkSheet2"].forEach(s=>{$(s).style.display=l?"":"none";if(l)$(s).href=l});
+    const bar=$("#syncbar");
+    if(st==="expired"){bar.classList.add("on");$("#syncbarTxt").innerHTML=`🔒 Connexion Google à renouveler (elle dure 1 h).${n?` <b>${n} modification(s)</b> attendent d'être envoyées.`:""} Tes DVD restent enregistrés sur cet appareil.`}
+    else if(st==="err"){bar.classList.add("on");$("#syncbarTxt").innerHTML=`⚠ Google Sheets : ${esc(msg||"erreur")}`}
+    else bar.classList.remove("on");
+    $("#gInfo").innerHTML=st==="off"?"Pas encore configuré : ajoute ton <b>googleClientId</b> dans <b>config.js</b> (étapes dans le README). En attendant, tout est gardé sur cet appareil."
+      :st==="on"||st==="busy"?`Connecté${this.email?" avec <b>"+esc(this.email)+"</b>":""}. Ta collection est enregistrée dans le Google Sheet <b>« DVDthèque »</b> de ton Drive.`
+      :st==="err"?`<span class="err">${esc(msg||"")}</span>`
+      :"Connecte-toi avec ton compte Google : l'appli crée (ou retrouve) un tableur « DVDthèque » dans ton Drive et y range ta collection.";
+    $("#stState").textContent=st==="on"?"📊 Enregistré dans Google Sheets":st==="busy"?"⏳ Synchronisation…":st==="off"?"💾 Enregistré sur cet appareil":"💾 Enregistré sur cet appareil"+(n?` · ${n} en attente`:"");
   }
-}
-function stopCamera(){
-  clearTimeout(scanTimer);scanTimer=null;
-  try{zxReader&&zxReader.reset()}catch{} zxReader=null;
-  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
-  $("#video").srcObject=null;
-}
-function onCode(raw){
-  const code=cleanCode(raw);if(!validEan(code))return;
-  const t=Date.now();if(code===lastCode&&t-lastAt<3000)return;lastCode=code;lastAt=t;
-  flash();addCode(code,"scan");
-}
-async function addCode(code,source){
-  code=cleanCode(code);if(!code)return;
-  if(!validEan(code)){beep(false);logScan(`✖ <span class="mono">${esc(code)}</span> : code invalide (vérifie les chiffres)`,"err");return}
-  if(items.has(code)){beep(false);const d=items.get(code);logScan(`↺ <span class="mono">${code}</span> déjà dans la collection${d.title?" : <b>"+esc(d.title)+"</b>":""} — <a href="#" data-open="${code}">voir</a>`,"warn");$("#scanMsg").textContent="Déjà dans la collection"+(d.title?" : "+d.title:"");return}
-  beep(true);
-  const d={ean:code,format:"DVD",addedAt:nowIso(),source};
-  await save(code,d);render();
-  const line=document.createElement("div");line.className="ok";line.innerHTML=`✔ <span class="mono">${code}</span> ajouté <span class="t"></span> — <a href="#" data-open="${code}">fiche</a>`;
-  const l=$("#scanLog");if(l.querySelector(".hint"))l.innerHTML="";l.prepend(line);
-  $("#scanMsg").textContent="Ajouté ✔ "+code;
-  if($("#openAfter").checked){closeVeil($("#vScan"));openFiche(code);return}
-  if(S.get("upc",true)){
-    line.querySelector(".t").innerHTML=`<span class="spinner"></span>`;
-    try{const tt=await lookupAndStore(code);const nd=items.get(code)||{};
-      if(tt&&tt!=="none"&&tt!=="skip"){line.querySelector(".t").innerHTML=`: <b>${esc(tt)}</b> <span class="src">${esc(nd.infoSource||"")}</span>${nd.titleToCheck?' <span class="chip">à vérifier</span>':""}`;$("#scanMsg").textContent="✔ "+tt;render()}
-      else line.querySelector(".t").textContent="(fiche introuvable, à identifier)";}
-    catch(e){line.querySelector(".t").textContent="(recherche : "+e.message+")"}
-  }
-}
-$("#bScan").addEventListener("click",()=>{$("#scanLog").innerHTML='<div class="hint">Les DVD scannés s\'affichent ici.</div>';openWin("vScan");startCamera()});
-$("#bCode").addEventListener("click",()=>{addCode($("#codeIn").value,"saisie");$("#codeIn").value="";$("#codeIn").focus()});
-$("#codeIn").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#bCode").click()}});
-$("#codeIn").addEventListener("input",e=>{const v=cleanCode(e.target.value);if(v.length===13&&validEan(v)){addCode(v,"saisie");e.target.value=""}});
-$("#scanLog").addEventListener("click",e=>{const a=e.target.closest("[data-open]");if(a){e.preventDefault();closeVeil($("#vScan"));openFiche(a.dataset.open)}});
-async function decodeFile(file){
-  const img=await loadImage(file);const det=await nativeDetector();
-  if(det){for(const side of [1600,900]){try{const r=await det.detect(toCanvas(img,side));if(r&&r[0])return cleanCode(r[0].rawValue)}catch{}}}
-  const Z=await loadZXing();const reader=new Z.MultiFormatReader();reader.setHints(zxHints(Z));
-  for(const side of [1400,900,2000,600]){const base=toCanvas(img,side);
-    for(const rot of [0,90]){let c=base;
-      if(rot){c=document.createElement("canvas");c.width=base.height;c.height=base.width;const g=c.getContext("2d");g.translate(c.width/2,c.height/2);g.rotate(Math.PI/2);g.drawImage(base,-base.width/2,-base.height/2)}
-      try{const r=reader.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(c))));if(r)return cleanCode(r.getText())}catch{}}}
-  return null;
-}
-$("#inScanPhoto").addEventListener("change",async e=>{
-  const f=e.target.files[0];e.target.value="";if(!f)return;
-  try{const code=await decodeFile(f);if(code)addCode(code,"photo");else{beep(false);logScan("✖ Code illisible sur la photo : plus près, bien à plat, sans reflet.","err")}}
-  catch{logScan("✖ Le lecteur n'a pas pu se charger. Tape le code à la main.","err")}
-});
-$("#bAdd").addEventListener("click",()=>openFiche(null,{source:"manuel"}));
+};
+async function saveItem(id,d){d.updatedAt=d.updatedAt||nowIso();items.set(id,d);await Local.put(id,d);G.push(id,"put")}
+async function deleteItem(id){items.delete(id);await Local.del(id);G.push(id,"del")}
+["#bLogin","#bLogin2","#bResync","#cloudSt"].forEach(s=>$(s).addEventListener("click",()=>{if(G.ok())G.sync();else G.login()}));
+$("#bLogout").addEventListener("click",()=>G.logout());
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&G.ok())G.sync()});
 
-/* ================= Import ================= */
-function parseCodes(text){
-  const out=[];
-  text.split(/\r?\n/).forEach(line=>{
-    if(!line.trim()||/^\s*code\s*;/i.test(line)||/^date et heure/i.test(line))return;
-    const cells=line.split(/[;,\t]/);let code=null,title="",when=null;
-    if(cells.length>=4&&/^\d{8,14}$/.test(cells[0].trim())){code=cells[0].trim();title=(cells[2]||"").trim();const ts=+cells[3];if(ts>1e9)when=new Date(ts*1000).toISOString()}
-    else if(cells.length>=3&&/EAN|UPC/i.test(cells[1]||"")){code=cells[2].trim();const m=(cells[0]||"").match(/(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})/);if(m)when=new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}`).toISOString()}
-    else{const m=line.match(/\b\d{8,13}\b/);if(m)code=m[0]}
-    if(code)out.push({code:cleanCode(code),title,when});
-  });
-  return out;
-}
-let pending=[],pendingJson=[];
-$("#bImport").addEventListener("click",()=>{pending=[];pendingJson=[];$("#pasteCodes").value="";$("#impLog").style.display="none";openWin("vImport")});
-$("#inImport").addEventListener("change",async e=>{
-  for(const f of e.target.files){const txt=await f.text();
-    if(/\.json$/i.test(f.name)||txt.trim().startsWith("{")){try{const j=JSON.parse(txt);const dv=j.dvds||j;Object.entries(dv).forEach(([id,d])=>pendingJson.push([id,d]))}catch{balloon("Fichier illisible",f.name)}}
-    else pending.push(...parseCodes(txt));}
-  e.target.value="";const l=$("#impLog");l.style.display="";
-  l.innerHTML=`<div>${pending.length} code(s)${pendingJson.length?` et ${pendingJson.length} fiche(s) de sauvegarde`:""} prêts. Clique <b>Importer</b>.</div>`;
+/* ================= Divers ================= */
+$("#bRandom").addEventListener("click",()=>{
+  const pool=[...items.entries()].filter(([,d])=>!d.seen);
+  if(!pool.length){balloon("Rien à voir…","Tu as déjà tout vu ! 🎉");return}
+  const [id,d]=pool[Math.floor(Math.random()*pool.length)];openFiche(id);balloon("🎲 Ce soir…",`${d.title}${d.year?" ("+d.year+")":""} — pas encore vu !`);
 });
-$("#bDoImport").addEventListener("click",async()=>{
-  const list=[...pending,...parseCodes($("#pasteCodes").value)];const l=$("#impLog");l.style.display="";l.innerHTML="";
-  let added=0,dup=0,bad=0,restored=0;const seen=new Set();
-  for(const [id,d] of pendingJson){if(!d||typeof d!=="object")continue;const ex=items.get(id);
-    if(!ex||String(d.updatedAt||"")>String(ex.updatedAt||"")){await save(id,d);restored++}}
-  for(const it of list){
-    if(seen.has(it.code))continue;seen.add(it.code);
-    if(!validEan(it.code)){bad++;l.insertAdjacentHTML("afterbegin",`<div class="err">✖ ${esc(it.code)} invalide</div>`);continue}
-    if(items.has(it.code)){dup++;continue}
-    const d={ean:it.code,format:"DVD",addedAt:it.when||nowIso(),source:"import"};if(it.title)d.title=it.title;
-    await save(it.code,d);added++;l.insertAdjacentHTML("afterbegin",`<div class="ok">✔ ${esc(it.code)}${it.title?" — "+esc(it.title):""}</div>`);
-  }
-  render();pending=[];pendingJson=[];$("#pasteCodes").value="";
-  l.insertAdjacentHTML("afterbegin",`<div><b>${added} ajouté(s)</b>, ${dup} déjà présent(s)${bad?`, ${bad} invalide(s)`:""}${restored?`, ${restored} fiche(s) restaurée(s)`:""}.</div>`);
-});
-
-/* ================= Export ================= */
 function download(name,text,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 const stamp=()=>new Date().toISOString().slice(0,10);
 $("#bExport").addEventListener("click",()=>openWin("vExport"));
 $("#bCsv").addEventListener("click",()=>{
-  const cols=["ean","title","originalTitle","year","director","actors","genre","duration","format","edition","publisher","rating","seen","lentTo","location","notes","synopsis","addedAt"];
   const q=v=>{v=v==null?"":String(v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-  const rows=[...items.values()].sort((a,b)=>(a.title||"￿").localeCompare(b.title||"￿","fr"));
-  download(`dvdtheque-${stamp()}.csv`,"﻿"+cols.join(";")+"\n"+rows.map(d=>cols.map(c=>q(c==="seen"?(d.seen?"oui":""):d[c])).join(";")).join("\n"),"text/csv;charset=utf-8");
+  const rows=[...items].sort((a,b)=>(a[1].title||"").localeCompare(b[1].title||"","fr")).map(([id,d])=>toRow(id,d).map(v=>q(v===true?"oui":v===false?"":v)).join(";"));
+  download(`dvdtheque-${stamp()}.csv`,"﻿"+COLS.join(";")+"\n"+rows.join("\n"),"text/csv;charset=utf-8");
 });
-$("#bJson").addEventListener("click",()=>{download(`dvdtheque-sauvegarde-${stamp()}.json`,JSON.stringify({app:"dvdtheque",version:1,exportedAt:nowIso(),dvds:Object.fromEntries(items)}),"application/json");S.set("lastBackup",nowIso())});
-
-/* ================= Settings ================= */
+$("#bJson").addEventListener("click",()=>download(`dvdtheque-sauvegarde-${stamp()}.json`,JSON.stringify({app:"dvdtheque",version:3,exportedAt:nowIso(),dvds:Object.fromEntries(items)}),"application/json"));
+$("#inRestore").addEventListener("change",async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;
+  try{const j=JSON.parse(await f.text());const dv=j.dvds||j;let n=0;
+    for(const [id,d] of Object.entries(dv)){if(!d||!d.title||d.deleted)continue;const ex=items.get(id);if(!ex||String(d.updatedAt||"")>String(ex.updatedAt||"")){await saveItem(id,d);n++}}
+    render();$("#restoreLog").textContent=`${n} DVD restauré(s).`;}
+  catch{$("#restoreLog").textContent="Fichier illisible."}
+});
 async function openSettings(){
-  hasProxy().then(p=>{
-    $("#eanProxyInfo").innerHTML=p?'<span class="ok">✔ Recherche DVDFr active (serveur Vercel détecté).</span>':'<span class="warn">⚠ DVDFr ne marche qu\'avec le site en ligne sur Vercel (dossier api/). Ici : UPCitemdb seulement.</span>';
-    $("#tmdbProxyInfo").innerHTML=window.__proxyTmdb?'<span class="ok">✔ La clé TMDB du serveur (variable TMDB_KEY sur Vercel) est utilisée : rien à remplir ici.</span>':"";
-  });
-  openSettingsWin();
+  $("#setTmdb").value=S.get("tmdbKey","");$("#tmdbState").textContent="";
+  hasProxy().then(()=>{$("#tmdbProxyInfo").innerHTML=proxyTmdb?'<span class="ok">✔ La clé TMDB du serveur (variable TMDB_KEY sur Vercel) est utilisée : rien à remplir.</span>':(CFG.tmdbKey?"Clé de config.js utilisée.":"")});
+  openWin("vSettings");
 }
-function openSettingsWin(){$("#setTmdb").value=S.get("tmdbKey","");$("#setUpc").checked=S.get("upc",true);$("#setBeep").checked=S.get("beep",true);$("#tmdbState").textContent=tmdbKey()?"Clé enregistrée.":"Aucune clé pour l'instant.";openWin("vSettings")}
 $("#bSettings").addEventListener("click",openSettings);
-$("#bSaveSettings").addEventListener("click",()=>{S.set("tmdbKey",$("#setTmdb").value.trim());S.set("upc",$("#setUpc").checked);S.set("beep",$("#setBeep").checked);closeVeil($("#vSettings"));balloon("Réglages enregistrés","")});
+$("#bSaveSettings").addEventListener("click",()=>{S.set("tmdbKey",$("#setTmdb").value.trim());closeVeil($("#vSettings"))});
 $("#bTestTmdb").addEventListener("click",async()=>{
   const old=S.get("tmdbKey","");S.set("tmdbKey",$("#setTmdb").value.trim());$("#tmdbState").textContent="Test…";
-  try{const r=await tmdbSearch("Matrix");$("#tmdbState").innerHTML=`<span class="ok">✔ Ça marche ! (${r.length} résultats pour « Matrix »)</span>`}
-  catch(e){S.set("tmdbKey",old);$("#tmdbState").innerHTML=`<span class="err">✖ ${e.message==="badkey"?"Clé refusée par TMDB":e.message==="nokey"?"Colle d'abord une clé":"TMDB injoignable"}</span>`}
+  try{const r=await tmdbSearch("Matrix");$("#tmdbState").innerHTML=`<span class="ok">✔ Ça marche (${r.length} résultats pour « Matrix »)</span>`}
+  catch(e){S.set("tmdbKey",old);$("#tmdbState").innerHTML=`<span class="err">✖ ${e.message==="badkey"?"Clé refusée":e.message==="nokey"?"Aucune clé":"TMDB injoignable"}</span>`}
 });
 $("#bWipe").addEventListener("click",async function(){
-  if(this.dataset.arm!=="1"){this.dataset.arm="1";this.textContent="Sûr ? Re-clique pour tout effacer";setTimeout(()=>{this.dataset.arm="";this.textContent="Tout effacer"},4000);return}
-  for(const id of [...items.keys()])await removeItem(id);S.set("seeded",true);render();closeVeil($("#vSettings"));balloon("Collection effacée","");
+  if(this.dataset.arm!=="1"){this.dataset.arm="1";this.textContent="Sûr ? Re-clique";setTimeout(()=>{this.dataset.arm="";this.textContent="Vider le cache local"},4000);return}
+  await Local.replaceAll([]);items.clear();G.pending={};S.set("pending",{});if(G.sheetId)S.set("linked:"+G.sheetId,false);render();closeVeil($("#vSettings"));
+  balloon("Cache vidé",G.ok()?"Rechargement depuis Google Sheets…":"");if(G.ok()){S.set("linked:"+G.sheetId,true);G.sync()}
 });
-
-/* ================= UI events ================= */
-async function toggleSeen(id){
-  const d=items.get(id);if(!d)return;
-  const nd={...d,seen:!d.seen,updatedAt:nowIso()};if(nd.seen)nd.seenAt=nowIso();else delete nd.seenAt;
-  await save(id,nd);render();balloon(nd.seen?"👁 Marqué comme vu":"Marqué comme pas vu",nd.title||nd.ean);
-}
-$("#content").addEventListener("click",e=>{const sb=e.target.closest("[data-seen]");if(sb){e.stopPropagation();toggleSeen(sb.dataset.seen);return}const th=e.target.closest("th[data-s]");if(th){$("#fSort").value=th.dataset.s;render();return}const c=e.target.closest("[data-id]");if(c)openFiche(c.dataset.id)});
+$("#content").addEventListener("click",e=>{
+  const sb=e.target.closest("[data-seen]");if(sb){e.stopPropagation();toggleSeen(sb.dataset.seen);return}
+  const th=e.target.closest("th[data-s]");if(th){$("#fSort").value=th.dataset.s;render();return}
+  const c=e.target.closest("[data-id]");if(c)openFiche(c.dataset.id)});
 $("#content").addEventListener("keydown",e=>{if(e.key==="Enter"){const c=e.target.closest("[data-id]");if(c)openFiche(c.dataset.id)}});
 ["q","fFilter","fSort"].forEach(id=>$("#"+id).addEventListener("input",render));
 $("#vShelf").addEventListener("click",()=>{view="shelf";S.set("view",view);render()});
 $("#vList").addEventListener("click",()=>{view="list";S.set("view",view);render()});
 $("#cloud").addEventListener("click",e=>{const a=e.target.closest("[data-g]");if(!a)return;genreFilter=genreFilter===a.dataset.g?null:a.dataset.g;render()});
 $("#count").addEventListener("click",()=>{if(genreFilter){genreFilter=null;render()}});
-$("#stats").addEventListener("click",e=>{if(e.target.id==="goTodo"){e.preventDefault();$("#fFilter").value="todo";render()}});
-let bt;function balloon(t,m){const b=$("#balloon");b.innerHTML=`<b>${esc(t)}</b>${esc(m||"")}`;b.classList.add("on");clearTimeout(bt);bt=setTimeout(()=>b.classList.remove("on"),4200)}
 
-/* ================= Cloud (Firebase Firestore + connexion Google) ================= */
-const FB_V="10.12.2";
-const Cloud={
-  fb:null,auth:null,db:null,user:null,unsub:null,
-  enabled(){return !!(CFG.firebase&&CFG.firebase.apiKey&&CFG.firebase.projectId)},
-  async init(){
-    if(!this.enabled()){this.status("off");return}
-    this.status("load");
-    try{
-      const base=`https://www.gstatic.com/firebasejs/${FB_V}/`;
-      const [app,auth,fs]=await Promise.all([import(base+"firebase-app.js"),import(base+"firebase-auth.js"),import(base+"firebase-firestore.js")]);
-      this.fb={app,auth,fs};
-      const a=app.initializeApp(CFG.firebase);
-      this.auth=auth.getAuth(a);this.db=fs.getFirestore(a);
-      try{await auth.getRedirectResult(this.auth)}catch{}
-      auth.onAuthStateChanged(this.auth,u=>this.onUser(u).catch(e=>this.status("err",e.code||e.message)));
-    }catch(e){this.status("err","Firebase ne se charge pas ("+(e.message||e)+")")}
-  },
-  async login(){
-    if(!this.fb){balloon("Cloud non configuré","Remplis config.js (voir README).");return}
-    const {auth}=this.fb;const p=new auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});
-    try{await auth.signInWithPopup(this.auth,p)}
-    catch(e){if(/popup-blocked|operation-not-supported|popup-closed-by-user/.test(e.code||"")&&e.code!=="auth/popup-closed-by-user")await auth.signInWithRedirect(this.auth,p);
-      else if(e.code!=="auth/popup-closed-by-user"&&e.code!=="auth/cancelled-popup-request")balloon("Connexion impossible",e.code==="auth/unauthorized-domain"?"Ajoute ce domaine dans Firebase → Authentication → Settings → Domaines autorisés.":(e.code||e.message))}
-  },
-  async logout(){if(this.fb)await this.fb.auth.signOut(this.auth)},
-  col(){return this.fb.fs.collection(this.db,"users",this.user.uid,"dvds")},
-  stamp(d){return String(d&&(d.updatedAt||d.addedAt)||"")},
-  async onUser(u){
-    if(this.unsub){this.unsub();this.unsub=null}
-    this.user=u;
-    if(!u){this.status("out");return}
-    this.status("sync");
-    const {fs}=this.fb;
-    const snap=await fs.getDocs(this.col());
-    const remote=new Map(snap.docs.map(d=>[d.id,d.data()]));
-    const local=new Map(await Store.all());
-    let down=0;
-    for(const [id,r] of remote){const l=local.get(id);if(!l||this.stamp(r)>this.stamp(l)){await save(id,r,{push:false});down++}}
-    const toPush=[...local].filter(([id,l])=>{const r=remote.get(id);return !r||this.stamp(l)>this.stamp(r)});
-    for(let i=0;i<toPush.length;i+=400){
-      const b=fs.writeBatch(this.db);
-      toPush.slice(i,i+400).forEach(([id,l])=>b.set(fs.doc(this.col(),id),this.clean({...l,updatedAt:l.updatedAt||l.addedAt||nowIso()})));
-      await b.commit();
-    }
-    render();
-    if(toPush.length||down)balloon("☁ Synchronisé",`${toPush.length} envoyé(s), ${down} récupéré(s).`);
-    this.unsub=fs.onSnapshot(this.col(),s=>{
-      let ch=false;
-      s.docChanges().forEach(c=>{
-        if(c.type==="removed"||c.doc.metadata.hasPendingWrites)return;
-        const r=c.doc.data(),l=items.get(c.doc.id);
-        if(r.deleted){if(l&&this.stamp(r)>=this.stamp(l)){Store.put(c.doc.id,r);items.delete(c.doc.id);ch=true}return}
-        if(!l||this.stamp(r)>this.stamp(l)){Store.put(c.doc.id,r);items.set(c.doc.id,r);ch=true}
-      });
-      if(ch)render();this.status("on");
-    },e=>this.status("err",e.code||e.message));
-    this.status("on");
-  },
-  clean(d){return JSON.parse(JSON.stringify(d))},
-  push(id,data){
-    if(!this.user||!this.fb)return;
-    const {fs}=this.fb;
-    fs.setDoc(fs.doc(this.col(),id),this.clean(data)).then(()=>this.status("on")).catch(e=>this.status("err",e.code||e.message));
-  },
-  status(st,msg){
-    const txt={off:"Cloud non configuré",load:"Cloud…",out:"Non connecté",sync:"Synchronisation…",on:"☁ Synchronisé",err:"Erreur cloud"}[st];
-    $("#cloudTxt").textContent=txt+(st==="on"&&this.user?" ("+(this.user.displayName||this.user.email||"").split(" ")[0]+")":"");
-    $("#cloudSt .dot").classList.toggle("on",st==="on");
-    $("#bLogin").style.display=st==="out"?"":"none";
-    $("#bLogin2").style.display=st==="out"||st==="off"?"":"none";
-    $("#bLogout").style.display=this.user?"":"none";
-    $("#cloudInfo").innerHTML=st==="off"?"Pas encore configuré : remplis <b>config.js</b> avec les infos de ton projet Firebase (étapes dans le README). En attendant, tout est gardé dans ce navigateur."
-      :st==="on"?`Connecté avec <b>${esc(this.user.email||"")}</b>. Ta collection est sauvegardée dans le cloud et synchronisée entre tes appareils.`
-      :st==="out"?"Connecte-toi avec ton compte Google pour sauvegarder la collection dans le cloud et la retrouver sur tous tes appareils."
-      :st==="err"?`<span class="err">Problème : ${esc(msg||"")}</span>`:"…";
-    if(st==="err")$("#stState").textContent="⚠ Cloud : "+(msg||"erreur");
-    else if(st==="on")$("#stState").textContent="☁ Sauvegardé dans le cloud";
-  }
-};
-$("#bLogin").addEventListener("click",()=>Cloud.login());
-$("#bLogin2").addEventListener("click",()=>Cloud.login());
-$("#bLogout").addEventListener("click",()=>Cloud.logout());
-
-/* ================= Hasard ================= */
-$("#bRandom").addEventListener("click",()=>{
-  const pool=[...items.entries()].filter(([,d])=>d.title&&!d.seen);
-  if(!pool.length){balloon("Rien à voir…","Tous tes films identifiés sont déjà vus (ou aucun n'a de titre).");return}
-  const [id,d]=pool[Math.floor(Math.random()*pool.length)];
-  openFiche(id);balloon("🎲 Ce soir…",`${d.title}${d.year?" ("+d.year+")":""} — pas encore vu !`);
-});
-
-/* ================= Boot ================= */
+/* ================= Démarrage ================= */
 (async function boot(){
-  await Store.open();
+  await Local.open();
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch{}
-  let rows=await Store.all();
-  if(!rows.length&&!S.get("seeded",false)){
-    try{const seed=JSON.parse($("#seed").textContent);for(const d of seed)await Store.put(d.ean,d);rows=await Store.all()}catch{}
-    S.set("seeded",true);
-  }
-  items=new Map(rows.filter(([,d])=>d&&!d.deleted));render();
-  $("#stState").textContent=Store.db?"💾 Sauvegardé dans ce navigateur":"⚠ Stockage limité";
-  const lb=S.get("lastBackup",null);
-  if(items.size>5&&(!lb||Date.now()-Date.parse(lb)>30*864e5))setTimeout(()=>balloon("Pense à sauvegarder 💾","Exporter → Sauvegarde complète. Ta collection ne vit que dans ce navigateur."),2500);
-  Cloud.init();
+  items=new Map((await Local.all()).filter(([,d])=>d&&d.title));render();
+  G.init();
   if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 })();
 })();

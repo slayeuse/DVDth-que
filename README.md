@@ -1,63 +1,57 @@
-# DVDthèque 2.0
+# DVDthèque 2.0 (v3)
 
-Site perso pour cataloguer ses DVD : scan du code-barres à la caméra, fiches automatiques (DVDFr + TMDB), « vu / pas vu », étagère façon années 2000, sauvegarde dans le cloud (Firebase, gratuit).
+Site perso pour cataloguer ses DVD : on cherche le titre sur TMDB, on clique sur l'affiche, et c'est rangé.
+Suivi « vu / pas vu », étagère façon années 2000, et la collection est enregistrée dans un **Google Sheet** de ton Drive après connexion avec ton compte Google.
 
-## Ce qu'il y a dans le dossier
+## Contenu du dossier
 
 | Fichier | Rôle |
 |---|---|
-| `index.html` | Le site (les 51 codes sont chargés au premier lancement) |
-| `config.js` | **À compléter** : ta config Firebase (+ clé TMDB de secours) |
-| `api/` | Petites fonctions serveur pour Vercel : relais DVDFr, TMDB (clé cachée) et UPCitemdb |
-| `firestore.rules` | Règles de sécurité à coller dans Firebase |
+| `index.html` | Le site |
+| `config.js` | **À compléter** : ton ID client Google (+ clé TMDB de secours, déjà remplie) |
+| `api/tmdb.js`, `api/ping.js` | Fonctions Vercel : relais TMDB (la clé reste cachée sur le serveur) |
 | `manifest.webmanifest`, `sw.js`, `icon*` | Installation sur l'écran d'accueil du téléphone + hors-ligne |
 
-## 1. Mettre en ligne sur Vercel (gratuit)
+> Mise à jour depuis la v2 : supprime de ton dépôt `api/dvdfr.js`, `api/upc.js` et `firestore.rules` (plus utilisés). Firebase n'est plus nécessaire.
 
-Il faut Vercel (ou un hébergeur qui exécute le dossier `api/`) : c'est lui qui interroge DVDFr, car le navigateur n'a pas le droit de l'appeler directement.
+## 1. Mise en ligne (Vercel)
 
-1. Mets le dossier dans un dépôt GitHub, puis sur https://vercel.com → **Add New → Project** → importe le dépôt (aucun réglage de build : « Other »).
-   *Ou* en ligne de commande dans le dossier : `npx vercel` puis `npx vercel --prod`.
-2. Vercel → ton projet → **Settings → Environment Variables** → ajoute `TMDB_KEY` = ta clé TMDB → **Redeploy**.
-3. Une fois que ça marche, tu peux vider `tmdbKey` dans `config.js` (sinon la clé reste lisible dans le code du site ; ce n'est pas grave pour une clé TMDB, mais c'est plus propre).
+1. Remplace les fichiers de ton dépôt par ceux de ce dossier → Vercel redéploie tout seul.
+2. Vérifie que la variable d'environnement `TMDB_KEY` existe (Vercel → projet → Settings → Environment Variables). Sinon, la clé de `config.js` sert de secours.
+3. Note l'adresse de ton site (ex. `https://ma-dvdtheque.vercel.app`), elle sert à l'étape 2.
 
-## 2. Sauvegarde cloud avec Firebase (gratuit, ~10 min)
+## 2. Connexion Google + Google Sheets (gratuit, ~10 min)
 
-Pourquoi Firebase plutôt que Google Sheets ou Supabase :
-- **Google Sheets** : possible, mais lent, sans vraie connexion sécurisée, et pas fait pour stocker des jaquettes.
-- **Supabase** (gratuit) : un projet se met **en pause après 7 jours sans activité**, gênant pour une vidéothèque qu'on ouvre de temps en temps.
-- **Firebase Firestore** (offre Spark) : pas de pause, pas de carte bancaire, 1 Go de données, 50 000 lectures et 20 000 écritures par jour. Largement assez pour des milliers de DVD. Connexion avec ton compte Google.
+Le site utilise la connexion Google « officielle » et ne demande qu'une seule autorisation : **accéder aux fichiers créés par l'appli** (`drive.file`). Il ne voit donc pas le reste de ton Drive. Au premier login, il crée un tableur **« DVDthèque »** dans ton Drive. Sur un autre appareil, il retrouve ce même tableur.
 
-Étapes :
-1. https://console.firebase.google.com → **Ajouter un projet** (Google Analytics inutile).
-2. **Build → Authentication → Commencer → Google → Activer**.
-3. Authentication → **Settings → Domaines autorisés** → ajoute ton domaine Vercel (ex. `ma-dvdtheque.vercel.app`).
-4. **Build → Firestore Database → Créer une base de données** (mode production, région `eur3` ou `europe-west`).
-   Onglet **Règles** → colle le contenu de `firestore.rules` → **Publier**.
-5. ⚙ **Paramètres du projet → Vos applications → `</>` (Web)** → donne un nom → copie l'objet `firebaseConfig` dans `config.js` (champs `apiKey`, `authDomain`, `projectId`, `appId`). Ces valeurs ne sont pas secrètes : c'est la règle Firestore qui protège tes données.
-6. Redéploie, ouvre le site → **☁ Connexion Google**. Ta collection locale est envoyée dans le cloud, puis tout se synchronise entre PC et téléphone (en direct).
+Dans la **Google Cloud Console** (https://console.cloud.google.com), avec ton compte Gmail. Les intitulés peuvent varier un peu selon les mises à jour de Google.
 
-Sans config Firebase, le site marche quand même : tout reste dans le navigateur (pense alors à **Exporter → Sauvegarde complète**).
+1. **Créer un projet** : en haut, sélecteur de projet → **Nouveau projet** → nom « DVDtheque » → Créer, puis sélectionne-le.
+2. **Activer les API** : menu ☰ → **API et services → Bibliothèque** → cherche **Google Sheets API** → **Activer**. Fais pareil pour **Google Drive API**.
+3. **Écran de consentement** : menu ☰ → **API et services → Écran de consentement OAuth** (ou **Google Auth Platform**) → **Commencer** :
+   - Nom de l'appli : « DVDthèque », adresse e-mail d'assistance : ton Gmail
+   - Audience : **Externe**
+   - Coordonnées : ton Gmail → accepte → **Créer**
+   - Dans **Audience** (ou « Utilisateurs test ») → **Ajouter des utilisateurs** → ton Gmail (et celui des personnes de ta famille qui l'utiliseront).
+4. **Créer l'ID client** : **Clients** (ou **Identifiants → Créer des identifiants → ID client OAuth**) :
+   - Type : **Application Web**
+   - **Origines JavaScript autorisées** → ajoute l'adresse de ton site, ex. `https://ma-dvdtheque.vercel.app` (sans `/` à la fin). Pour tester sur ton PC, ajoute aussi `http://localhost:8000`.
+   - Pas besoin d'« URI de redirection » → **Créer**
+5. Copie l'**ID client** (il finit par `.apps.googleusercontent.com`) dans `config.js`, ligne `googleClientId`, puis redéploie.
+6. Ouvre le site → **🔑 Connexion Google** → choisis ton compte → autorise. Si Google affiche « Google n'a pas validé cette application », clique **Continuer** : c'est normal pour une appli perso en mode test.
 
-## Comment les fiches sont trouvées
+### Bon à savoir
+- **La connexion dure 1 h** (règle de Google pour les sites sans serveur). Ensuite un bandeau propose de te reconnecter en un clic. En attendant, tout reste enregistré sur l'appareil et part dans le Sheet à la reconnexion.
+- **Tu peux modifier le tableur directement** dans Google Sheets (cocher « vu », corriger un titre…). Ne touche pas la colonne `id` (masquée), puis recharge le site.
+- Les DVD ajoutés avant la connexion sont envoyés dans le Sheet au premier login.
 
-À chaque scan (ou avec **Actions rapides → Chercher les titres via les codes**) :
+## Utilisation
 
-1. **Solution A : DVDFr.com**, la base française des DVD. Titre FR/VO, année, édition, éditeur, jaquette, réalisateur, acteurs, durée, synopsis, genres.
-2. **Solution B : UPCitemdb** si DVDFr ne connaît pas le code. Titre seul (base surtout américaine), marqué « à vérifier ».
-3. **Plan C, à la main** : bouton « Chercher le code sur Google », puis tape le titre et **Chercher sur TMDB**, et clique sur la bonne affiche.
-
-**Compléter les fiches (TMDB)** remplit ce qui manque (synopsis, acteurs, affiche…) pour tous les DVD qui ont déjà un titre.
-
-## Vu / pas vu
-
-- Bouton 👁 sur chaque boîtier (vert = vu, avec un bandeau « ✔ VU ») ; en vue Liste, clique dans la colonne **Vu**.
-- Filtres **Déjà vus / Pas encore vus**, compteur « Reste à voir », date de visionnage enregistrée.
-- 🎲 **Qu'est-ce qu'on regarde ce soir ?** tire au sort un film pas encore vu.
-
-## Tester en local
-
-`npx vercel dev` dans le dossier (fonctions incluses), ou simplement `python -m http.server 8000` (sans DVDFr : UPCitemdb + TMDB avec la clé de `config.js`).
+- **➕ Ajouter un DVD** : tape le titre (ajoute l'année si besoin : « Dune 1984 »), choisis le format, clique sur l'affiche. Enchaîne les titres sans fermer la fenêtre. Pas trouvé ? « Ajouter à la main ».
+- **👁 Vu / pas vu** : bouton œil sur chaque boîtier, colonne « Vu » en vue Liste, filtres « Déjà vus / Pas encore vus ».
+- **🎲 Qu'est-ce qu'on regarde ce soir ?** : tirage au sort parmi les films pas encore vus.
+- **Fiche** : note en étoiles, rangement, prêté à, notes, et « Changer de film » si TMDB s'est trompé d'édition.
+- **💾 Exporter** : CSV pour Excel, sauvegarde `.json` (restaurable).
 
 ---
-Données DVD : DVDFr.com. Ce site utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB.
+Ce site utilise l'API TMDB mais n'est ni approuvé ni certifié par TMDB.
